@@ -3,11 +3,59 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var helmet = require('helmet');
 
 var app = express();
+app.use(helmet());
+
+var session = require('express-session');
+var passport = require('passport');
+
+var User = require('./models/user');
+var Objective = require('./models/objective');
+var Stamp = require('./models/stamp');
+
+User.sync().then(() => {
+  Objective.belongsTo(User, {foreignKey: 'createdBy'});
+  Objective.sync().then(() => {
+    Stamp.belongsTo(Objective, {foreignKey: 'objectiveId'});
+    Stamp.sync();
+  });
+})
+
+var GitHubStrategy = require('passport-github2').Strategy;
+var GITHUB_CLIENT_ID = '7511dc825f840c2ce36a';
+var GITHUB_CLIENT_SECRET = 'dc0241cc011d44509e46d2431ace69009c8264dd';
+
+passport.serializeUser(function(user, done) {
+    done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+    done(null, obj);
+});
+
+passport.use(new GitHubStrategy({
+    clientID: GITHUB_CLIENT_ID,
+    clientSecret: GITHUB_CLIENT_SECRET,
+    callbackURL: 'http://localhost:8000/auth/github/callback'
+},
+  function(accessToken, refreshToken, profile, done) {
+    process.nextTick(function () {
+      User.upsert({
+        userId: profile.id,
+        username: profile.username
+      }).then(() => {
+        done(null, profile);
+      });
+    });
+  }
+));
+
+var indexRouter = require('./routes/index');
+var loginRouter = require('./routes/login');
+var logoutRouter = require('./routes/logout');
+var objectiveRouter = require('./routes/objectives');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -19,8 +67,25 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(session({ secret: '8d1daafe604b1e25', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/login', loginRouter);
+app.use('/logout', logoutRouter);
+app.use('/objectives', objectiveRouter);
+
+app.get('/auth/github',
+  passport.authenticate('github', { scope: ['user:email'] }),
+  function (req, res) {
+});
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function (req, res) {
+    res.redirect('/');
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

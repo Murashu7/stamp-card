@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  form(method="post" action="/objectives")
+    div
+      h5 目標
+      input(type="text" name="objectiveName")
+    div
+      h5 頻度（週に何回）
+      select(name="frequency")
+        option(value="1") 1
+        option(value="2") 2
+        option(value="3") 3
+        option(value="4") 4
+        option(value="5") 5
+        option(value="6") 6
+        option(value="7") 7
+    div
+      h5 期限
+      input(type="date" name="dueDay")
+    div
+      h5 メモ
+      textarea(name="memo")
+    button(type="submit") 目標をつくる

@@ -3,3 +3,32 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
+  div
+    if user
+      div
+        a(href="/logout") #{user.username} をログアウト
+      div
+        a(href="/objectives/new") 目的を作る
+      -var hasObjective = objectives.length > 0
+      if hasObjective
+        h3 あなたの目標一覧
+        table
+          thead
+            tr
+              th 目的
+              th 頻度（週に何回）
+              th 頻度の達成率
+              th 期限
+              th 目標達成率
+          tbody
+          each objective in objectives
+            tr
+              td
+                a(href=`/objectives/${objective.objectiveId}`) #{objective.objectiveName}
+              td #{objective.frequency}
+              td 100%
+              td #{objective.formattedDueDay}
+              td 100%
+    else
+      div
+        a(href="/login") ログイン

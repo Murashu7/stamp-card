@@ -2,93 +2,18 @@ extends layout
 
 block content
   h4 #{objective.objectiveName}
-  p 頻度の達成率：50%(4/8)
-  p 目標達成率：20%(20/100)
-  p 2019年8月
+  p 頻度の達成率：#{objective.freqAchvRate}
+  p 目標達成率：#{objective.objAchvRate}
+  div(data-today=objective.today)#calendar
+  div
   table
-    thead
-      tr
-        th 日
-        th 月
-        th 火
-        th 水
-        th 木
-        th 金
-        th 土
     tbody
       tr
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
+        td 頻度:
+        td #{objective.frequency}
       tr
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
+        td 期限:
+        td #{objective.formattedDueDay}
       tr
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-      tr
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-      tr
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-        td
-          button ◯
-  p(sytle="white-space:pre;") #{objective.memo}
+        td メモ:
+        td(style="white-space:pre;") #{objective.memo}

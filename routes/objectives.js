@@ -5,6 +5,7 @@ const authenticationEnsurer = require('./authentication-ensurer');
 const uuid = require('uuid');
 const Objective = require('../models/objective');
 const Stamp = require('../models/stamp');
+const moment = require('moment-timezone');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user });
@@ -24,12 +25,7 @@ router.post('/', authenticationEnsurer, (req, res, next) => {
     dueDay: new Date(req.body.dueDay),
     frequency: req.body.frequency
   }).then((objective) => {
-    Stamp.create({
-      objectiveId: objectiveId,
-      date: createdAt
-    }).then((stamp) => {
-      res.redirect('/objectives/' + objective.objectiveId);
-    });
+    res.redirect('/objectives/' + objective.objectiveId);
   });
 });
 
@@ -41,17 +37,16 @@ router.get('/:objectiveId', authenticationEnsurer, (req, res, next) => {
     order: [['"updatedAt"', 'DESC']]
   }).then((objective) => {
     if (objective) {
-      Stamp.findOne({
-        where: {
-          objectiveId: req.params.objectiveId
-          // date: req.params.createdAt
-        },
-      }).then((stamp) => {
-        res.render('objective', {
-          objective: objective,
-          stamp: stamp
-        });
+      objective.today = new Date();
+      objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
+      // TODO: 頻度と目標の達成率
+      objective.freqAchvRate = '50%(20/40)';
+      objective.objAchvRate = '20%(20/100)';
+
+      res.render('objective', {
+        objective: objective,
       });
+
     } else {
       const err = new Error('指定された目的は見つかりません');
       err.status = 404;

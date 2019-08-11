@@ -2,6 +2,9 @@
 const request = require('supertest');
 const app = require('../app');
 const passportStub = require('passport-stub');
+const User = require('../models/user');
+const Objective = require('../models/objective');
+const Stamp = require('../models/stamp');
 
 describe('/login', () => {
 
@@ -39,4 +42,47 @@ describe('/login', () => {
       .expect(302, done);
   });
 
+});
+
+describe('/objectives', () => {
+  before(() => {
+    passportStub.install(app);
+    passportStub.login({ id: 0, username: 'testuser' });
+  });
+
+  after(() => {
+    passportStub.logout();
+    passportStub.uninstall(app);
+  });
+
+  it('予定が作成でき、表示される', (done) => {
+    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+      request(app)
+        .post('/objectives')
+        .send({ objectiveName: 'テスト目的1', dueDay:'2019-09-01', memo: 'テストメモ1', frequency: 4, })
+        .expect('Location', /objectives/)
+        .expect(302)
+        .end((err, res) => {
+          let createdObjectivePath = res.headers.location;
+          request(app)
+            .get(createdObjectivePath)
+            // TODO 作成された目的が表示されていることをテストする
+            .expect(/テスト目的1/)
+            .expect(/2019\/09\/01/)
+            .expect(/4/)
+            .expect(/テストメモ1/)
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done(err);
+              // テストで作成したデータを削除
+              const objectiveId = createdObjectivePath.split('/objectives/')[1];
+                Objective.findByPk(objectiveId).then((o) => { 
+                  o.destroy().then(() => { 
+                    done(); 
+                  });
+                });
+            });
+        });
+    });
+  });
 });

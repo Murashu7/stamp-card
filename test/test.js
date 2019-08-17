@@ -2,8 +2,10 @@
 const request = require('supertest');
 const app = require('../app');
 const passportStub = require('passport-stub');
+const moment = require('moment-timezone');
 const User = require('../models/user');
 const Objective = require('../models/objective');
+const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 
 describe('/login', () => {
@@ -75,12 +77,19 @@ describe('/objectives', () => {
             .end((err, res) => {
               if (err) return done(err);
               // テストで作成したデータを削除
-              const objectiveId = createdObjectivePath.split('/objectives/')[1];
-                Objective.findByPk(objectiveId).then((o) => { 
-                  o.destroy().then(() => { 
-                    done(); 
+              const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+              Month.findAll({
+                where: { objectiveId: objectiveId }
+              }).then((months) => {
+                const promises = months.map((m) => { return m.destroy(); });
+                Promise.all(promises).then(() => {
+                  Objective.findByPk(objectiveId).then((o) => { 
+                    o.destroy().then(() => { 
+                      done(); 
+                    });
                   });
                 });
+              });
             });
         });
     });

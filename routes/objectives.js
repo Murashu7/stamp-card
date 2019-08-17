@@ -14,22 +14,19 @@ router.get('/new', authenticationEnsurer, (req, res, next) => {
 
 router.post('/', authenticationEnsurer, (req, res, next) => {
   const objectiveId = uuid.v4();
-  const createdAt = new Date();
+  const today = new Date();
 
   Objective.create({
     objectiveId: objectiveId,
     objectiveName: req.body.objectiveName.slice(0, 255),
     memo: req.body.memo,
     createdBy: req.user.id,
-    createdAt: createdAt,
-    updatedAt: createdAt,
+    createdAt: today,
+    updatedAt: today,
     dueDay: new Date(req.body.dueDay),
     frequency: req.body.frequency
   }).then((objective) => {
-    const year = createdAt.getFullYear();
-    const month = createdAt.getMonth() + 1;
-    const monthName = yyyy_mm(year, month);
-
+    const monthName = moment(today).tz('Asia/Tokyo').format('YYYY-MM');
     Month.create({
       monthName: monthName,
       objectiveId: objectiveId
@@ -51,6 +48,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       // TODO: 頻度と目標の達成率
       objective.freqAchvRate = '50%(20/40)';
       objective.objAchvRate = '20%(20/100)';
+
       Month.findOrCreate({
         where: {
           monthName: req.params.monthName
@@ -73,11 +71,5 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
     }
   });
 });
-
-function yyyy_mm(y, m) {
-  const y0 = ('000' + y).slice(-4);
-  const m0 = ('0' + m).slice(-2);
-  return `${y0}-${m0}`;
-}
 
 module.exports = router;

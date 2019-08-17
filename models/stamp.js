@@ -9,27 +9,36 @@ const Stamp = loader.database.define('stamps', {
     autoIncrement: true,
     allowNull: false
   },
-  statusList: {
-    type: Sequelize.ARRAY(Sequelize.BOOLEAN),
+  status: {
+    type: Sequelize.BOOLEAN,
     allowNull: false,
-    defaultValue: [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+    defaultValue: false
+   },
+  type: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   },
-  date: {
-    type: Sequelize.DATE,
+  color: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  montId: {
+    type: Sequelize.INTEGER,
     allowNull: false
   },
   objectiveId: {
     type: Sequelize.UUID,
     allowNull: false
+  },
+  userId: {
+    type: Sequelize.UUID,
+    allowNull: false
   }
 }, {
   freezeTableName: true,
-  timestamps: false,
-  indexes: [
-    {
-      fields: ['objectiveId']
-    }
-  ]
+  timestamps: false
 });
 
 module.exports = Stamp;

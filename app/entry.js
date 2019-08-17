@@ -1,4 +1,5 @@
 'use strict';
+import moment from 'moment-timezone';
 
 const week = ['日', '月', '火', '水', '木', '金', '土'];
 const cal = document.getElementById("calendar");
@@ -11,14 +12,16 @@ next.innerText = "次の月";
 
 // TODO: ここで必要なデータを取得する
 // Server → pug → JS
+const calMonth = new Date(cal.dataset.calmonth);
 const today = new Date(cal.dataset.today);
 const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+const objId = cal.dataset.objid;
 
-const displayCal = function(date) {
-  const year = date.getFullYear(); 
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const firstDay = new Date(date.setDate(1)); // その月の初日
+const displayCal = function(calMonth) {
+  const year = calMonth.getFullYear(); 
+  const month = calMonth.getMonth() + 1;
+  const day = calMonth.getDate();
+  const firstDay = new Date(calMonth.setDate(1)); // その月の初日
   const lastDay = new Date(year, month, 0); // その月の末日
   const startValue = firstDay.getDay(); // 開始値( 0 - 6 )
   const endValue = startValue + lastDay.getDate(); // 終了値
@@ -79,16 +82,38 @@ const displayCal = function(date) {
   }
 }
 
+const makePrevMonth = function() {
+  return new Date(calMonth.setDate(0)); // 先月末日
+}
+
+const makeNextMonth = function() {
+  const lastDay = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate(); // その月の末日
+  return new Date(calMonth.setDate(lastDay + 1)); // 次月の初日
+}
+
+const makeMonthName = function(month) {
+  return  moment(month).tz('Asia/Tokyo').format('YYYY-MM');
+} 
+
+const submitForm = function(objId, monthName) {
+  const form = document.createElement('form');
+  form.action = `/objectives/${objId}/months/${monthName}`;
+  form.method = 'get';
+  document.body.appendChild(form);
+  form.submit();
+}
+
 prev.addEventListener('click', function(e) {
-  const prevMonth = new Date(today.setDate(0)); // 先月末日
-  displayCal(prevMonth);
+  const prevMonth = makePrevMonth();
+  const monthName = makeMonthName(prevMonth);
+  submitForm(objId, monthName);
 }, false);
 
 next.addEventListener('click', function(e) {
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate(); // その月の末日
-  const nextMonth = new Date(today.setDate(lastDay + 1)); // 次月の初日
-  displayCal(nextMonth);
+  const nextMonth = makeNextMonth();
+  const monthName = makeMonthName(nextMonth);
+  submitForm(objId, monthName);
 }, false);
 
-displayCal(today);
+displayCal(calMonth);
 

@@ -13,15 +13,19 @@ var passport = require('passport');
 
 var User = require('./models/user');
 var Objective = require('./models/objective');
+var Month = require('./models/month');
 var Stamp = require('./models/stamp');
 
 User.sync().then(() => {
   Objective.belongsTo(User, {foreignKey: 'createdBy'});
   Objective.sync().then(() => {
-    Stamp.belongsTo(Objective, {foreignKey: 'objectiveId'});
-    Stamp.sync();
+    Month.belongsTo(Objective, {foreignKey: 'objectiveId'});
+    Month.sync().then(() => {
+      Stamp.belongsTo(Month, {foreignKey: 'monthId'});
+      Stamp.sync();
+    });
   });
-})
+});
 
 var GitHubStrategy = require('passport-github2').Strategy;
 var GITHUB_CLIENT_ID = '7511dc825f840c2ce36a';

@@ -4,6 +4,7 @@ const router = express.Router();
 const authenticationEnsurer = require('./authentication-ensurer');
 const uuid = require('uuid');
 const Objective = require('../models/objective');
+const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 const moment = require('moment-timezone');
 
@@ -25,11 +26,20 @@ router.post('/', authenticationEnsurer, (req, res, next) => {
     dueDay: new Date(req.body.dueDay),
     frequency: req.body.frequency
   }).then((objective) => {
-    res.redirect('/objectives/' + objective.objectiveId);
+    const year = createdAt.getFullYear();
+    const month = createdAt.getMonth() + 1;
+    const monthName = yyyy_mm(year, month);
+
+    Month.create({
+      monthName: monthName,
+      objectiveId: objectiveId
+    }).then((month) => {
+      res.redirect(`/objectives/${objective.objectiveId}/months/${month.monthName}`);
+    });
   });
 });
 
-router.get('/:objectiveId', authenticationEnsurer, (req, res, next) => {
+router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, next) => {
   Objective.findOne({
     where: {
       objectiveId: req.params.objectiveId
@@ -37,16 +47,25 @@ router.get('/:objectiveId', authenticationEnsurer, (req, res, next) => {
     order: [['"updatedAt"', 'DESC']]
   }).then((objective) => {
     if (objective) {
-      objective.today = new Date();
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       // TODO: 頻度と目標の達成率
       objective.freqAchvRate = '50%(20/40)';
       objective.objAchvRate = '20%(20/100)';
-
-      res.render('objective', {
-        objective: objective,
+      Month.findOrCreate({
+        where: {
+          monthName: req.params.monthName
+        },
+        defaults: {
+          objectiveId: req.params.objectiveId
+        }
+      }).then(([month, created]) => {
+        res.render('objective', {
+          objective: objective,
+          month: month || created,
+          today: new Date()
+        });
       });
-
+      
     } else {
       const err = new Error('指定された目的は見つかりません');
       err.status = 404;
@@ -54,4 +73,11 @@ router.get('/:objectiveId', authenticationEnsurer, (req, res, next) => {
     }
   });
 });
+
+function yyyy_mm(y, m) {
+  const y0 = ('000' + y).slice(-4);
+  const m0 = ('0' + m).slice(-2);
+  return `${y0}-${m0}`;
+}
+
 module.exports = router;

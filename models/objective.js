@@ -24,16 +24,16 @@ const Objective = loader.database.define('objectives', {
     type: Sequelize.TEXT,
     allowNull: false
   },
-  createdBy: {
-    type: Sequelize.INTEGER,
-    allowNull: false
-  },
   createdAt: {
     type: Sequelize.DATE,
     allowNull: false
   },
   updatedAt: {
     type: Sequelize.DATE,
+    allowNull: false
+  },
+  createdBy: {
+    type: Sequelize.INTEGER,
     allowNull: false
   }
 }, {

@@ -24,7 +24,7 @@ block content
           each objective in objectives
             tr
               td
-                a(href=`/objectives/${objective.objectiveId}`) #{objective.objectiveName}
+                a(href=`/objectives/${objective.objectiveId}/months/${monthName}`) #{objective.objectiveName}
               td #{objective.frequency}
               td 100%
               td #{objective.formattedDueDay}

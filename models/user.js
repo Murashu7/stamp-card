@@ -1,4 +1,4 @@
-'use strict';
+'guset strict';
 const loader = require('./sequelize-loader');
 const Sequelize = loader.Sequelize;
 

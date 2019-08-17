@@ -6,10 +6,9 @@ const Stamp = loader.database.define('stamps', {
   stampId: {
     type: Sequelize.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
     allowNull: false
   },
-  status: {
+  stampStatus: {
     type: Sequelize.BOOLEAN,
     allowNull: false,
     defaultValue: false
@@ -24,15 +23,11 @@ const Stamp = loader.database.define('stamps', {
     allowNull: false,
     defaultValue: 0
   },
-  montId: {
+  monthId: {
     type: Sequelize.INTEGER,
     allowNull: false
   },
   objectiveId: {
-    type: Sequelize.UUID,
-    allowNull: false
-  },
-  userId: {
     type: Sequelize.UUID,
     allowNull: false
   }

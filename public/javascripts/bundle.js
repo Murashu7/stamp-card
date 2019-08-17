@@ -109,6 +109,7 @@ var calMonth = new Date(cal.dataset.calmonth);
 var today = new Date(cal.dataset.today);
 var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
 var objId = cal.dataset.objid;
+var stamps = cal.dataset.stamps;
 
 var displayCal = function displayCal(calMonth) {
   var year = calMonth.getFullYear();
@@ -148,7 +149,7 @@ var displayCal = function displayCal(calMonth) {
 
   table.appendChild(tBody);
   var count = 0;
-  var days = 0;
+  var days = 1;
 
   for (var _i = 0; _i < 6; _i++) {
     var _tr = document.createElement("tr");
@@ -157,12 +158,27 @@ var displayCal = function displayCal(calMonth) {
       var td = document.createElement("td");
 
       if (startValue <= count && count < endValue) {
-        days++;
-        td.innerText = days;
-        var tdDate = "".concat(year, "-").concat(month, "-").concat(td.textContent); // 当日の td に背景色をつける
+        // TODO: stamps
+        if (stamps[days]) {
+          if (stamps[days].stampStats) {
+            td.innerText = '◯';
+          } else {
+            td.innerText = days;
+            var tdDate = "".concat(year, "-").concat(month, "-").concat(td.textContent); // 当日の td に背景色をつける
 
-        if (todayStr === tdDate) {
-          td.style.backgroundColor = 'skyblue';
+            if (todayStr === tdDate) {
+              td.style.backgroundColor = 'skyblue';
+            }
+          }
+        } else {
+          td.innerText = days;
+
+          var _tdDate = "".concat(year, "-").concat(month, "-").concat(td.textContent); // 当日の td に背景色をつける
+
+
+          if (todayStr === _tdDate) {
+            td.style.backgroundColor = 'skyblue';
+          }
         }
 
         td.addEventListener('click', function (e) {
@@ -173,6 +189,8 @@ var displayCal = function displayCal(calMonth) {
         });
 
         _tr.appendChild(td);
+
+        days++;
       }
 
       count++;

@@ -16,6 +16,7 @@ const calMonth = new Date(cal.dataset.calmonth);
 const today = new Date(cal.dataset.today);
 const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 const objId = cal.dataset.objid;
+const stamps = cal.dataset.stamps;
 
 const displayCal = function(calMonth) {
   const year = calMonth.getFullYear(); 
@@ -54,18 +55,31 @@ const displayCal = function(calMonth) {
   table.appendChild(tBody);
 
   let count = 0;
-  let days = 0;
+  let days = 1;
   for (let i = 0; i < 6; i++) {
     let tr = document.createElement("tr");
     for (let j = 0, len = week.length; j < len; j++) {
       let td = document.createElement("td");
       if (startValue <= count && count < endValue) {
-        days++;
-        td.innerText = days;
-        const tdDate = `${year}-${month}-${td.textContent}`;
-        // 当日の td に背景色をつける
-        if (todayStr === tdDate) {
-           td.style.backgroundColor = 'skyblue';
+        // TODO: stamps
+        if (stamps[days]) {
+          if (stamps[days].stampStats) {
+            td.innerText = '◯';
+          } else {
+            td.innerText = days;
+            const tdDate = `${year}-${month}-${td.textContent}`;
+            // 当日の td に背景色をつける
+            if (todayStr === tdDate) {
+               td.style.backgroundColor = 'skyblue';
+            }
+          }
+        } else {
+          td.innerText = days;
+          const tdDate = `${year}-${month}-${td.textContent}`;
+          // 当日の td に背景色をつける
+          if (todayStr === tdDate) {
+             td.style.backgroundColor = 'skyblue';
+          }
         }
         td.addEventListener('click', function(e) {
           // TODO: 
@@ -74,6 +88,7 @@ const displayCal = function(calMonth) {
           }
         });
         tr.appendChild(td)  
+        days++;
       }
       count++;
       tr.appendChild(td)  

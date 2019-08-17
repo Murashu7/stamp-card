@@ -57,10 +57,27 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
           objectiveId: req.params.objectiveId
         }
       }).then(([month, created]) => {
+        /*
         res.render('objective', {
           objective: objective,
           month: month || created,
           today: new Date()
+        });
+        */
+        // TODO: Stamp
+        const m = month || created;
+        Stamp.findAll({
+          where: { monthId: m.monthId },
+          order: [['"stampId"', 'ASC']]
+        }).then((stamps) => {
+          console.log(stamps);
+
+          res.render('objective', {
+            objective: objective,
+            month: month || created,
+            today: new Date(),
+            stamps: stamps
+          });
         });
       });
       

@@ -112,7 +112,7 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampId', () => {
             where: { objectiveId: objectiveId, monthName: monthName }
           }).then((month) => {
             const userId = 0;
-            const stampId = 1;
+            const stampId = 30;
             request(app)
               .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampId}`)
               .send({ stampStatus: true })

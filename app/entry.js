@@ -16,7 +16,28 @@ const calMonth = new Date(cal.dataset.calmonth);
 const today = new Date(cal.dataset.today);
 const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 const objId = cal.dataset.objid;
-const stamps = cal.dataset.stamps;
+const stampStrs = cal.dataset.stamps;
+
+const makeStampMapMap = function(stampStrs) {
+  let stampMapMap = new Map();
+  let tmp = stampStrs.match(/\{[^\{\}]+\}/g);
+  if (tmp) {
+    tmp.forEach((t) => {
+      let json = JSON.parse(t);
+      let stampMap = new Map();
+      for (let [key, value] of Object.entries(json)) {
+        if (key !== 'stampName') {
+          stampMap.set(key, value);
+        }
+      }
+      stampMapMap.set(json.stampName, stampMap);
+    });
+  }
+  return stampMapMap;
+}
+
+let stampMapMap = makeStampMapMap(stampStrs);
+console.log(stampMapMap);
 
 const displayCal = function(calMonth) {
   const year = calMonth.getFullYear(); 
@@ -62,30 +83,59 @@ const displayCal = function(calMonth) {
       let td = document.createElement("td");
       if (startValue <= count && count < endValue) {
         // TODO: stamps
-        if (stamps[days]) {
-          if (stamps[days].stampStats) {
-            td.innerText = '◯';
+        td.innerText = days;
+        td.setAttribute('data-day', days);
+        const tdDate = `${year}-${month}-${td.dataset.day}`;
+        const day = td.dataset.day;
+        const stampName = day;
+        console.log(stampMapMap.has(day));
+        // 当日の td に背景色をつける
+        if (todayStr === tdDate) {
+           td.style.backgroundColor = 'skyblue';
+        }
+
+        if (stampMapMap.has(stampName)) {
+          if (stampMapMap.get(stampName).get("stampStatus")) {
+            td.innerText = '';
+            td.innerHTML = '&#x2b55;';
           } else {
+            td.innerHTML = '';
             td.innerText = days;
-            const tdDate = `${year}-${month}-${td.textContent}`;
-            // 当日の td に背景色をつける
-            if (todayStr === tdDate) {
-               td.style.backgroundColor = 'skyblue';
-            }
-          }
-        } else {
-          td.innerText = days;
-          const tdDate = `${year}-${month}-${td.textContent}`;
-          // 当日の td に背景色をつける
-          if (todayStr === tdDate) {
-             td.style.backgroundColor = 'skyblue';
           }
         }
+        
         td.addEventListener('click', function(e) {
           // TODO: 
-          if (td.textContent) {
-            console.log(`${year}-${month}-${td.textContent}`);
+          const tdDate = `${year}-${month}-${td.dataset.day}`;
+          const monthName = makeMonthName(calMonth);
+          const day = td.dataset.day;
+          const stampName = day;
+          let stampStatus = false;
+
+          if (stampMapMap.has(stampName)) {
+            stampStatus = !stampMapMap.get(stampName).get("stampStatus");
+            stampMapMap.get(stampName).set("stampStatus", stampStatus);
+            if (stampStatus) {
+              td.innerText = '';
+              td.innerHTML = '&#x2b55;';
+            } else {
+              td.innerHTML = '';
+              td.innerText = day;
+            }
+          } else {
+            let stampMap = new Map();
+            stampStatus = !stampStatus;
+            stampMap.set("stampStatus", stampStatus);
+            stampMap.set("type", 0);
+            stampMap.set("color", 0);
+            stampMap.set("objectiveId", objId);
+            stampMapMap.set(stampName, stampMap);
+            td.innerText = '';
+            td.innerHTML = '&#x2b55;';
           }
+          postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
+            .then(data => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
+            .catch(error => console.error(error));
         });
         tr.appendChild(td)  
         days++;
@@ -95,6 +145,25 @@ const displayCal = function(calMonth) {
     }
     tBody.appendChild(tr);
   }
+}
+
+
+function postData(url = ``, data = {}) {
+  // 既定のオプションには * が付いています
+  return fetch(url, {
+    method: "POST", // *GET, POST, PUT, DELETE, etc.
+    mode: "cors", // no-cors, cors, *same-origin
+    cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: "same-origin", // include, same-origin, *omit
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      // "Content-Type": "application/x-www-form-urlencoded",
+    },
+    redirect: "follow", // manual, *follow, error
+    referrer: "no-referrer", // no-referrer, *client
+    body: JSON.stringify(data), // 本文のデータ型は "Content-Type" ヘッダーと一致する必要があります
+  })
+  .then(response => response.json()); // レスポンスの JSON を解析
 }
 
 const makePrevMonth = function() {

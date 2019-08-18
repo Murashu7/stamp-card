@@ -50,28 +50,14 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.objAchvRate = '20%(20/100)';
 
       Month.findOrCreate({
-        where: {
-          monthName: req.params.monthName
-        },
-        defaults: {
-          objectiveId: req.params.objectiveId
-        }
+        where: { objectiveId: req.params.objectiveId, monthName: req.params.monthName },
       }).then(([month, created]) => {
-        /*
-        res.render('objective', {
-          objective: objective,
-          month: month || created,
-          today: new Date()
-        });
-        */
         // TODO: Stamp
         const m = month || created;
         Stamp.findAll({
           where: { monthId: m.monthId },
           order: [['"stampId"', 'ASC']]
         }).then((stamps) => {
-          console.log(stamps);
-
           res.render('objective', {
             objective: objective,
             month: month || created,

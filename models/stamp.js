@@ -6,6 +6,11 @@ const Stamp = loader.database.define('stamps', {
   stampId: {
     type: Sequelize.INTEGER,
     primaryKey: true,
+    autoIncrement: true,
+    allowNull: false
+  },
+  stampName: {
+    type: Sequelize.STRING,
     allowNull: false
   },
   stampStatus: {

@@ -5,20 +5,20 @@ const authenticationEnsurer = require('./authentication-ensurer');
 const Stamp = require('../models/stamp');
 const Month = require('../models/month');
 
-router.post('/:objectiveId/months/:monthName/stamps/:stampId', authenticationEnsurer, (req, res, next) => {
+router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationEnsurer, (req, res, next) => {
   const objectiveId = req.params.objectiveId;
   const monthName = req.params.monthName;
-  const stampId = req.params.stampId;
+  const stampName = req.params.stampName;
   const stampStatus = req.body.stampStatus;
 
   Month.findOne({
     where: { objectiveId: objectiveId, monthName: monthName }
   }).then((month) => {
     Stamp.upsert({
-      stampId: stampId,
-      objectiveId: objectiveId,
+      stampName: stampName,
+      stampStatus: stampStatus,
       monthId: month.monthId,
-      stampStatus: stampStatus
+      objectiveId: objectiveId
     }).then(() => {
       res.json({ status: 'OK', stampStatus: stampStatus });
     });

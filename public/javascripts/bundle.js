@@ -94,6 +94,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var moment_timezone__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(moment_timezone__WEBPACK_IMPORTED_MODULE_0__);
 
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 
 var week = ['日', '月', '火', '水', '木', '金', '土'];
 var cal = document.getElementById("calendar");
@@ -109,7 +117,36 @@ var calMonth = new Date(cal.dataset.calmonth);
 var today = new Date(cal.dataset.today);
 var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
 var objId = cal.dataset.objid;
-var stamps = cal.dataset.stamps;
+var stampStrs = cal.dataset.stamps;
+
+var makeStampMapMap = function makeStampMapMap(stampStrs) {
+  var stampMapMap = new Map();
+  var tmp = stampStrs.match(/\{[^\{\}]+\}/g);
+
+  if (tmp) {
+    tmp.forEach(function (t) {
+      var json = JSON.parse(t);
+      var stampMap = new Map();
+
+      for (var _i = 0, _Object$entries = Object.entries(json); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+            key = _Object$entries$_i[0],
+            value = _Object$entries$_i[1];
+
+        if (key !== 'stampName') {
+          stampMap.set(key, value);
+        }
+      }
+
+      stampMapMap.set(json.stampName, stampMap);
+    });
+  }
+
+  return stampMapMap;
+};
+
+var stampMapMap = makeStampMapMap(stampStrs);
+console.log(stampMapMap);
 
 var displayCal = function displayCal(calMonth) {
   var year = calMonth.getFullYear();
@@ -151,7 +188,7 @@ var displayCal = function displayCal(calMonth) {
   var count = 0;
   var days = 1;
 
-  for (var _i = 0; _i < 6; _i++) {
+  for (var _i2 = 0; _i2 < 6; _i2++) {
     var _tr = document.createElement("tr");
 
     var _loop = function _loop(j, _len) {
@@ -159,33 +196,66 @@ var displayCal = function displayCal(calMonth) {
 
       if (startValue <= count && count < endValue) {
         // TODO: stamps
-        if (stamps[days]) {
-          if (stamps[days].stampStats) {
-            td.innerText = '◯';
+        td.innerText = days;
+        td.setAttribute('data-day', days);
+        var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
+        var _day = td.dataset.day;
+        var stampName = _day;
+        console.log(stampMapMap.has(_day)); // 当日の td に背景色をつける
+
+        if (todayStr === tdDate) {
+          td.style.backgroundColor = 'skyblue';
+        }
+
+        if (stampMapMap.has(stampName)) {
+          if (stampMapMap.get(stampName).get("stampStatus")) {
+            td.innerText = '';
+            td.innerHTML = '&#x2b55;';
           } else {
+            td.innerHTML = '';
             td.innerText = days;
-            var tdDate = "".concat(year, "-").concat(month, "-").concat(td.textContent); // 当日の td に背景色をつける
-
-            if (todayStr === tdDate) {
-              td.style.backgroundColor = 'skyblue';
-            }
-          }
-        } else {
-          td.innerText = days;
-
-          var _tdDate = "".concat(year, "-").concat(month, "-").concat(td.textContent); // 当日の td に背景色をつける
-
-
-          if (todayStr === _tdDate) {
-            td.style.backgroundColor = 'skyblue';
           }
         }
 
         td.addEventListener('click', function (e) {
           // TODO: 
-          if (td.textContent) {
-            console.log("".concat(year, "-").concat(month, "-").concat(td.textContent));
+          var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
+          var monthName = makeMonthName(calMonth);
+          var day = td.dataset.day;
+          var stampName = day;
+          var stampStatus = false;
+
+          if (stampMapMap.has(stampName)) {
+            stampStatus = !stampMapMap.get(stampName).get("stampStatus");
+            stampMapMap.get(stampName).set("stampStatus", stampStatus);
+
+            if (stampStatus) {
+              td.innerText = '';
+              td.innerHTML = '&#x2b55;';
+            } else {
+              td.innerHTML = '';
+              td.innerText = day;
+            }
+          } else {
+            var stampMap = new Map();
+            stampStatus = !stampStatus;
+            stampMap.set("stampStatus", stampStatus);
+            stampMap.set("type", 0);
+            stampMap.set("color", 0);
+            stampMap.set("objectiveId", objId);
+            stampMapMap.set(stampName, stampMap);
+            td.innerText = '';
+            td.innerHTML = '&#x2b55;';
           }
+
+          postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
+            stampStatus: stampStatus
+          }).then(function (data) {
+            return console.log(JSON.stringify(data));
+          }) // JSON-string from `response.json()` call
+          .catch(function (error) {
+            return console.error(error);
+          });
         });
 
         _tr.appendChild(td);
@@ -205,6 +275,34 @@ var displayCal = function displayCal(calMonth) {
     tBody.appendChild(_tr);
   }
 };
+
+function postData() {
+  var url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  // 既定のオプションには * が付いています
+  return fetch(url, {
+    method: "POST",
+    // *GET, POST, PUT, DELETE, etc.
+    mode: "cors",
+    // no-cors, cors, *same-origin
+    cache: "no-cache",
+    // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: "same-origin",
+    // include, same-origin, *omit
+    headers: {
+      "Content-Type": "application/json; charset=utf-8" // "Content-Type": "application/x-www-form-urlencoded",
+
+    },
+    redirect: "follow",
+    // manual, *follow, error
+    referrer: "no-referrer",
+    // no-referrer, *client
+    body: JSON.stringify(data) // 本文のデータ型は "Content-Type" ヘッダーと一致する必要があります
+
+  }).then(function (response) {
+    return response.json();
+  }); // レスポンスの JSON を解析
+}
 
 var makePrevMonth = function makePrevMonth() {
   return new Date(calMonth.setDate(0)); // 先月末日

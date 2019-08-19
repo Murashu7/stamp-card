@@ -56,7 +56,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
         const m = month || created;
         Stamp.findAll({
           where: { monthId: m.monthId },
-          order: [['"stampId"', 'ASC']]
+          order: [['"stampName"', 'ASC']]
         }).then((stamps) => {
           res.render('objective', {
             objective: objective,

@@ -113,13 +113,15 @@ prev.innerText = "前の月";
 next.innerText = "次の月"; // TODO: ここで必要なデータを取得する
 // Server → pug → JS
 
-var calMonth = new Date(cal.dataset.calmonth);
+var calDate = new Date(cal.dataset.calmonth);
 var today = new Date(cal.dataset.today);
 var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
 var objId = cal.dataset.objid;
-var stampStrs = cal.dataset.stamps;
+var stampStrs = cal.dataset.stamps; // stamp
 
-var makeStampMapMap = function makeStampMapMap(stampStrs) {
+var stampTypes = ["&#x2b55;", " &#x1f603;", "&#x2618;", " &#x1f427;", " &#x1f43e;"];
+
+var setupStampMapMap = function setupStampMapMap(stampStrs) {
   var stampMapMap = new Map();
   var tmp = stampStrs.match(/\{[^\{\}]+\}/g);
 
@@ -145,20 +147,19 @@ var makeStampMapMap = function makeStampMapMap(stampStrs) {
   return stampMapMap;
 };
 
-var stampMapMap = makeStampMapMap(stampStrs);
-console.log(stampMapMap);
+var stampMapMap = setupStampMapMap(stampStrs);
 
-var displayCal = function displayCal(calMonth) {
-  var year = calMonth.getFullYear();
-  var month = calMonth.getMonth() + 1;
-  var day = calMonth.getDate();
-  var firstDay = new Date(calMonth.setDate(1)); // その月の初日
+var displayCal = function displayCal(calDate) {
+  var year = makeYear(calDate);
+  var month = makeMonth(calDate);
+  var day = makeDay(calDate);
+  var firstDay = new Date(calDate.setDate(1)); // その月の初日
 
   var lastDay = new Date(year, month, 0); // その月の末日
 
-  var startValue = firstDay.getDay(); // 開始値( 0 - 6 )
+  var startValue = firstDay.getDay(); // カレンダーの開始値( 0 - 6 )
 
-  var endValue = startValue + lastDay.getDate(); // 終了値
+  var endValue = startValue + lastDay.getDate(); // カレンダーの終了値
 
   var table = document.createElement("table");
   var tHead = document.createElement("thead");
@@ -191,7 +192,7 @@ var displayCal = function displayCal(calMonth) {
   for (var _i2 = 0; _i2 < 6; _i2++) {
     var _tr = document.createElement("tr");
 
-    var _loop = function _loop(j, _len) {
+    for (var j = 0, _len = week.length; j < _len; j++) {
       var td = document.createElement("td");
 
       if (startValue <= count && count < endValue) {
@@ -200,8 +201,7 @@ var displayCal = function displayCal(calMonth) {
         td.setAttribute('data-day', days);
         var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
         var _day = td.dataset.day;
-        var stampName = _day;
-        console.log(stampMapMap.has(_day)); // 当日の td に背景色をつける
+        var stampName = _day; // 当日の td に背景色をつける
 
         if (todayStr === tdDate) {
           td.style.backgroundColor = 'skyblue';
@@ -209,54 +209,13 @@ var displayCal = function displayCal(calMonth) {
 
         if (stampMapMap.has(stampName)) {
           if (stampMapMap.get(stampName).get("stampStatus")) {
-            td.innerText = '';
-            td.innerHTML = '&#x2b55;';
+            pressStamp(td, stampMapMap.get(stampName).get("type"));
           } else {
-            td.innerHTML = '';
-            td.innerText = days;
+            removeStamp(td, _day);
           }
         }
 
-        td.addEventListener('click', function (e) {
-          // TODO: 
-          var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
-          var monthName = makeMonthName(calMonth);
-          var day = td.dataset.day;
-          var stampName = day;
-          var stampStatus = false;
-
-          if (stampMapMap.has(stampName)) {
-            stampStatus = !stampMapMap.get(stampName).get("stampStatus");
-            stampMapMap.get(stampName).set("stampStatus", stampStatus);
-
-            if (stampStatus) {
-              td.innerText = '';
-              td.innerHTML = '&#x2b55;';
-            } else {
-              td.innerHTML = '';
-              td.innerText = day;
-            }
-          } else {
-            var stampMap = new Map();
-            stampStatus = !stampStatus;
-            stampMap.set("stampStatus", stampStatus);
-            stampMap.set("type", 0);
-            stampMap.set("color", 0);
-            stampMap.set("objectiveId", objId);
-            stampMapMap.set(stampName, stampMap);
-            td.innerText = '';
-            td.innerHTML = '&#x2b55;';
-          }
-
-          postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
-            stampStatus: stampStatus
-          }).then(function (data) {
-            return console.log(JSON.stringify(data));
-          }) // JSON-string from `response.json()` call
-          .catch(function (error) {
-            return console.error(error);
-          });
-        });
+        addStampEventListener(td, calDate, stampMapMap, objId);
 
         _tr.appendChild(td);
 
@@ -266,14 +225,66 @@ var displayCal = function displayCal(calMonth) {
       count++;
 
       _tr.appendChild(td);
-    };
-
-    for (var j = 0, _len = week.length; j < _len; j++) {
-      _loop(j, _len);
     }
 
     tBody.appendChild(_tr);
   }
+};
+
+var initStampMap = function initStampMap(stampStatus, objId) {
+  var stampMap = new Map();
+  stampMap.set("stampStatus", stampStatus);
+  stampMap.set("type", 0);
+  stampMap.set("color", 0);
+  stampMap.set("objectiveId", objId);
+  return stampMap;
+}; // TODO: 
+
+
+var pressStamp = function pressStamp(elem, type) {
+  elem.innerText = ''; // elem.innerHTML = '&#x2b55;';
+
+  elem.innerHTML = stampTypes[4];
+};
+
+var removeStamp = function removeStamp(elem, str) {
+  elem.innerHTML = '';
+  elem.innerText = str;
+};
+
+var addStampEventListener = function addStampEventListener(elem, date, stampMapMap, objId) {
+  elem.addEventListener('click', function (e) {
+    // TODO: 
+    var day = elem.dataset.day;
+    var stampName = day;
+    var tdDate = "".concat(makeYear(date), "-").concat(makeMonth(date), "-").concat(day);
+    var monthName = makeMonthName(date);
+    var stampStatus = false;
+
+    if (stampMapMap.has(stampName)) {
+      stampStatus = !stampMapMap.get(stampName).get("stampStatus");
+      stampMapMap.get(stampName).set("stampStatus", stampStatus);
+
+      if (stampStatus) {
+        pressStamp(elem, stampMapMap.get(stampName).get("type"));
+      } else {
+        removeStamp(elem, day);
+      }
+    } else {
+      stampStatus = !stampStatus;
+      stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+      pressStamp(elem, stampMapMap.get(stampName).get("type"));
+    }
+
+    postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
+      stampStatus: stampStatus
+    }).then(function (data) {
+      return console.log(JSON.stringify(data));
+    }) // JSON-string from `response.json()` call
+    .catch(function (error) {
+      return console.error(error);
+    });
+  }, false);
 };
 
 function postData() {
@@ -304,18 +315,30 @@ function postData() {
   }); // レスポンスの JSON を解析
 }
 
-var makePrevMonth = function makePrevMonth() {
-  return new Date(calMonth.setDate(0)); // 先月末日
+var makeYear = function makeYear(date) {
+  return date.getFullYear();
 };
 
-var makeNextMonth = function makeNextMonth() {
-  var lastDay = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate(); // その月の末日
-
-  return new Date(calMonth.setDate(lastDay + 1)); // 次月の初日
+var makeMonth = function makeMonth(date) {
+  return date.getMonth() + 1;
 };
 
-var makeMonthName = function makeMonthName(month) {
-  return moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(month).tz('Asia/Tokyo').format('YYYY-MM');
+var makeDay = function makeDay(date) {
+  return date.getDate();
+};
+
+var makePrevMonth = function makePrevMonth(date) {
+  return new Date(date.setDate(0)); // 先月末日
+};
+
+var makeNextMonth = function makeNextMonth(date) {
+  var lastDay = new Date(makeYear(date), makeMonth(date), 0).getDate(); // その月の末日
+
+  return new Date(date.setDate(lastDay + 1)); // 次月の初日
+};
+
+var makeMonthName = function makeMonthName(date) {
+  return moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(date).tz('Asia/Tokyo').format('YYYY-MM');
 };
 
 var submitForm = function submitForm(objId, monthName) {
@@ -327,16 +350,16 @@ var submitForm = function submitForm(objId, monthName) {
 };
 
 prev.addEventListener('click', function (e) {
-  var prevMonth = makePrevMonth();
+  var prevMonth = makePrevMonth(calDate);
   var monthName = makeMonthName(prevMonth);
   submitForm(objId, monthName);
 }, false);
 next.addEventListener('click', function (e) {
-  var nextMonth = makeNextMonth();
+  var nextMonth = makeNextMonth(calDate);
   var monthName = makeMonthName(nextMonth);
   submitForm(objId, monthName);
 }, false);
-displayCal(calMonth);
+displayCal(calDate);
 
 /***/ }),
 /* 1 */

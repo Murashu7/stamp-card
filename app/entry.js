@@ -12,13 +12,16 @@ next.innerText = "次の月";
 
 // TODO: ここで必要なデータを取得する
 // Server → pug → JS
-const calMonth = new Date(cal.dataset.calmonth);
+const calDate = new Date(cal.dataset.calmonth);
 const today = new Date(cal.dataset.today);
 const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 const objId = cal.dataset.objid;
 const stampStrs = cal.dataset.stamps;
 
-const makeStampMapMap = function(stampStrs) {
+// stamp
+const stampTypes = ["&#x2b55;", " &#x1f603;", "&#x2618;", " &#x1f427;", " &#x1f43e;"];
+
+const setupStampMapMap = function(stampStrs) {
   let stampMapMap = new Map();
   let tmp = stampStrs.match(/\{[^\{\}]+\}/g);
   if (tmp) {
@@ -36,24 +39,23 @@ const makeStampMapMap = function(stampStrs) {
   return stampMapMap;
 }
 
-let stampMapMap = makeStampMapMap(stampStrs);
-console.log(stampMapMap);
+let stampMapMap = setupStampMapMap(stampStrs);
 
-const displayCal = function(calMonth) {
-  const year = calMonth.getFullYear(); 
-  const month = calMonth.getMonth() + 1;
-  const day = calMonth.getDate();
-  const firstDay = new Date(calMonth.setDate(1)); // その月の初日
+
+const displayCal = function(calDate) {
+  const year = makeYear(calDate); 
+  const month = makeMonth(calDate);
+  const day = makeDay(calDate);
+  const firstDay = new Date(calDate.setDate(1)); // その月の初日
   const lastDay = new Date(year, month, 0); // その月の末日
-  const startValue = firstDay.getDay(); // 開始値( 0 - 6 )
-  const endValue = startValue + lastDay.getDate(); // 終了値
+  const startValue = firstDay.getDay(); // カレンダーの開始値( 0 - 6 )
+  const endValue = startValue + lastDay.getDate(); // カレンダーの終了値
 
   const table = document.createElement("table");
   const tHead = document.createElement("thead");
   const tBody = document.createElement("tbody");
   const tr = document.createElement("tr");
   const h5 = document.createElement("h5");
-
   h5.innerText = `${year}年${month}月`;
 
   // 全ての子要素を削除
@@ -88,55 +90,18 @@ const displayCal = function(calMonth) {
         const tdDate = `${year}-${month}-${td.dataset.day}`;
         const day = td.dataset.day;
         const stampName = day;
-        console.log(stampMapMap.has(day));
         // 当日の td に背景色をつける
         if (todayStr === tdDate) {
            td.style.backgroundColor = 'skyblue';
         }
-
         if (stampMapMap.has(stampName)) {
           if (stampMapMap.get(stampName).get("stampStatus")) {
-            td.innerText = '';
-            td.innerHTML = '&#x2b55;';
+            pressStamp(td, stampMapMap.get(stampName).get("type"));
           } else {
-            td.innerHTML = '';
-            td.innerText = days;
+            removeStamp(td, day);
           }
         }
-        
-        td.addEventListener('click', function(e) {
-          // TODO: 
-          const tdDate = `${year}-${month}-${td.dataset.day}`;
-          const monthName = makeMonthName(calMonth);
-          const day = td.dataset.day;
-          const stampName = day;
-          let stampStatus = false;
-
-          if (stampMapMap.has(stampName)) {
-            stampStatus = !stampMapMap.get(stampName).get("stampStatus");
-            stampMapMap.get(stampName).set("stampStatus", stampStatus);
-            if (stampStatus) {
-              td.innerText = '';
-              td.innerHTML = '&#x2b55;';
-            } else {
-              td.innerHTML = '';
-              td.innerText = day;
-            }
-          } else {
-            let stampMap = new Map();
-            stampStatus = !stampStatus;
-            stampMap.set("stampStatus", stampStatus);
-            stampMap.set("type", 0);
-            stampMap.set("color", 0);
-            stampMap.set("objectiveId", objId);
-            stampMapMap.set(stampName, stampMap);
-            td.innerText = '';
-            td.innerHTML = '&#x2b55;';
-          }
-          postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
-            .then(data => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
-            .catch(error => console.error(error));
-        });
+        addStampEventListener(td, calDate, stampMapMap, objId);
         tr.appendChild(td)  
         days++;
       }
@@ -147,6 +112,54 @@ const displayCal = function(calMonth) {
   }
 }
 
+const initStampMap = function(stampStatus, objId) {
+  let stampMap = new Map();
+  stampMap.set("stampStatus", stampStatus);
+  stampMap.set("type", 0);
+  stampMap.set("color", 0);
+  stampMap.set("objectiveId", objId);
+  return stampMap;
+}
+
+// TODO: 
+const pressStamp = function(elem, type) {
+  elem.innerText = '';
+  // elem.innerHTML = '&#x2b55;';
+  elem.innerHTML = stampTypes[4];
+}
+
+const removeStamp = function(elem, str) {
+  elem.innerHTML = '';
+  elem.innerText = str;
+}
+
+const addStampEventListener = function(elem, date, stampMapMap, objId) {
+  elem.addEventListener('click', function(e) {
+    // TODO: 
+    const day = elem.dataset.day;
+    const stampName = day;
+    const tdDate = `${makeYear(date)}-${makeMonth(date)}-${day}`;
+    const monthName = makeMonthName(date);
+    let stampStatus = false;
+
+    if (stampMapMap.has(stampName)) {
+      stampStatus = !stampMapMap.get(stampName).get("stampStatus");
+      stampMapMap.get(stampName).set("stampStatus", stampStatus);
+      if (stampStatus) {
+        pressStamp(elem, stampMapMap.get(stampName).get("type"));
+      } else {
+        removeStamp(elem, day);
+      }
+    } else {
+      stampStatus = !stampStatus;
+      stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+      pressStamp(elem, stampMapMap.get(stampName).get("type"));
+    }
+    postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
+      .then(data => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
+      .catch(error => console.error(error));
+  }, false);
+}
 
 function postData(url = ``, data = {}) {
   // 既定のオプションには * が付いています
@@ -166,17 +179,29 @@ function postData(url = ``, data = {}) {
   .then(response => response.json()); // レスポンスの JSON を解析
 }
 
-const makePrevMonth = function() {
-  return new Date(calMonth.setDate(0)); // 先月末日
+const makeYear = function(date) {
+  return date.getFullYear();
 }
 
-const makeNextMonth = function() {
-  const lastDay = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate(); // その月の末日
-  return new Date(calMonth.setDate(lastDay + 1)); // 次月の初日
+const makeMonth = function(date) {
+  return date.getMonth() + 1;
 }
 
-const makeMonthName = function(month) {
-  return  moment(month).tz('Asia/Tokyo').format('YYYY-MM');
+const makeDay = function(date) {
+  return date.getDate();
+}
+
+const makePrevMonth = function(date) {
+  return new Date(date.setDate(0)); // 先月末日
+}
+
+const makeNextMonth = function(date) {
+  const lastDay = new Date(makeYear(date), makeMonth(date), 0).getDate(); // その月の末日
+  return new Date(date.setDate(lastDay + 1)); // 次月の初日
+}
+
+const makeMonthName = function(date) {
+  return  moment(date).tz('Asia/Tokyo').format('YYYY-MM');
 } 
 
 const submitForm = function(objId, monthName) {
@@ -188,16 +213,16 @@ const submitForm = function(objId, monthName) {
 }
 
 prev.addEventListener('click', function(e) {
-  const prevMonth = makePrevMonth();
+  const prevMonth = makePrevMonth(calDate);
   const monthName = makeMonthName(prevMonth);
   submitForm(objId, monthName);
 }, false);
 
 next.addEventListener('click', function(e) {
-  const nextMonth = makeNextMonth();
+  const nextMonth = makeNextMonth(calDate);
   const monthName = makeMonthName(nextMonth);
   submitForm(objId, monthName);
 }, false);
 
-displayCal(calMonth);
+displayCal(calDate);
 

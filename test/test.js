@@ -8,6 +8,7 @@ const User = require('../models/user');
 const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
+const assert = require('assert');
 
 describe('/login', () => {
 
@@ -67,20 +68,25 @@ describe('/objectives', () => {
         .expect(302)
         .end((err, res) => {
           let createdObjectivePath = res.headers.location;
-          // TODO: month のテスト
-          const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
-
           request(app)
             .get(createdObjectivePath)
-            // TODO 作成された目的が表示されていることをテストする
+            // 作成された目的が表示されていることをテストする
             .expect(/テスト目的1/)
             .expect(/2019\/09\/01/)
             .expect(/4/)
             .expect(/テストメモ1/)
             .expect(200)
             .end((err, res) => {
-              // テストで作成したデータを削除
+              // month のテスト
               const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+              const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+              Month.findAll({
+                where: { objectiveId: objectiveId }
+              }).then((months) => {
+                assert.equal(months.length, 1, `stamps の要素数は 1 です`);
+                assert.equal(months[0].monthName, monthName);
+              });
+              // テストで作成したデータを削除
               deleteObjectiveAggregate(objectiveId, done, err);
             });
         });
@@ -88,7 +94,7 @@ describe('/objectives', () => {
   });
 });
 
-describe('/objectives/:objectiveId/months/:monthName/stamps/:stampId', () => {
+describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
   before(() => {
     passportStub.install(app);
     passportStub.login({ id: 0, username: 'testuser' });
@@ -112,12 +118,22 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampId', () => {
             where: { objectiveId: objectiveId, monthName: monthName }
           }).then((month) => {
             const userId = 0;
-            const stampId = 30;
+            const stampName = "30";
             request(app)
-              .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampId}`)
+              .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
               .send({ stampStatus: true })
               .expect('{"status":"OK","stampStatus":true}')
-              .end((err, res) => { deleteObjectiveAggregate(objectiveId, done, err); });
+              .end((err, res) => {
+                Stamp.findAll({
+                  where: { objectiveId: objectiveId }
+                }).then((stamps) => {
+                  assert.equal(stamps.length, 1, `stampsの要素の数は 1 です`);
+                  assert.equal(stamps[0].monthId, month.monthId);
+                  assert.equal(stamps[0].stampStatus, true);
+                  assert.equal(stamps[0].objectiveId, objectiveId);
+                  deleteObjectiveAggregate(objectiveId, done, err);
+                });
+              });
           });
         });
     });
@@ -129,18 +145,18 @@ function deleteObjectiveAggregate(objectiveId, done, err) {
     where: { objectiveId: objectiveId }
   }).then((stamps) => {
     const promises = stamps.map((s) => { return s.destroy(); });
-    Promise.all(promises).then(() => {
-      Month.findAll({
+    return Promise.all(promises);
+  }).then(() => {
+    return Month.findAll({
         where: { objectiveId: objectiveId }
-      }).then((months) => {
-        const promises = months.map((m) => { return m.destroy(); });
-        Promise.all(promises).then(() => {
-          Objective.findByPk(objectiveId).then((o) => { o.destroy(); });
-          if (err) return done(err);
-          done();
-        });
-      });
     });
+  }).then((months) => {
+    const promises = months.map((m) => { return m.destroy(); });
+    return Promise.all(promises);
+  }).then(() => {
+    Objective.findByPk(objectiveId).then((o) => { o.destroy(); });
+    if (err) return done(err);
+      done();
   });
 }
 

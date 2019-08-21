@@ -19,10 +19,12 @@ const objId = cal.dataset.objid;
 const stampStrs = cal.dataset.stamps;
 
 // stamp
-const stampTypeMap = new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]);
-console.log(stampMapMap);
-
-const stampTypes = ["&#x2b55;", " &#x1f603;", "&#x2618;", " &#x1f427;", " &#x1f43e;"];
+const stampTypeObj = {
+  map: new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]),
+  defaultType: function() {
+    return Array.from(this.map.keys())[0];
+  }
+}
 
 const setupStampMapMap = function(stampStrs) {
   let stampMapMap = new Map();
@@ -118,7 +120,7 @@ const displayCal = function(calDate) {
 
 const initStampMap = function(stampStatus, objId) {
   let stampMap = new Map();
-  const defaultStampType = Array.from(stampTypeMap.keys())[0];
+  const defaultStampType = stampTypeObj.defaultType();
   stampMap.set("stampStatus", stampStatus);
   stampMap.set("type", defaultStampType);
   stampMap.set("color", 0);
@@ -127,9 +129,9 @@ const initStampMap = function(stampStatus, objId) {
 }
 
 const pressStamp = function(elem, type) {
-  if (stampTypeMap.has(type)) {
+  if (stampTypeObj.map.has(type)) {
     elem.innerText = '';
-    elem.innerHTML = stampTypeMap.get(type);
+    elem.innerHTML = stampTypeObj.map.get(type);
   }
 }
 

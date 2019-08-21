@@ -37,6 +37,9 @@ router.post('/', authenticationEnsurer, (req, res, next) => {
 });
 
 router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, next) => {
+  let storedObjective = null;
+  let storedMonth = null;
+
   Objective.findOne({
     where: {
       objectiveId: req.params.objectiveId
@@ -44,35 +47,61 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
     order: [['"updatedAt"', 'DESC']]
   }).then((objective) => {
     if (objective) {
+      storedObjective = objective;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
+      
       // TODO: 頻度と目標の達成率
       objective.freqAchvRate = '50%(20/40)';
       objective.objAchvRate = '20%(20/100)';
 
-      Month.findOrCreate({
+      return Month.findOrCreate({
         where: { objectiveId: req.params.objectiveId, monthName: req.params.monthName },
-      }).then(([month, created]) => {
-        // TODO: Stamp
-        const m = month || created;
-        Stamp.findAll({
-          where: { monthId: m.monthId },
-          order: [['"stampName"', 'ASC']]
-        }).then((stamps) => {
-          res.render('objective', {
-            objective: objective,
-            month: month || created,
-            today: new Date(),
-            stamps: stamps
-          });
-        });
+        order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
       });
-      
     } else {
-      const err = new Error('指定された目的は見つかりません');
+      const err = new Error('指定された目標は見つかりません');
       err.status = 404;
+      next(err);
+    }
+  }).then(([month, created]) => {
+    // TODO: Stamp
+    storedMonth = month || created;
+    return Stamp.findAll({
+      where: { monthId: storedMonth.monthId },
+      order: [['"stampName"', 'ASC']]
+    });
+  }).then((stamps) => {
+    res.render('objective', {
+      objective: storedObjective,
+      month: storedMonth,
+      today: new Date(),
+      stamps: stamps
+    });
+  });
+});
+
+router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
+  Objective.findOne({
+    where: {
+      objectiveId: req.params.objectiveId
+    }
+  }).then((objective) => {
+    if (isMine(req, objective)) {
+      objective.formattedDueDay = moment(objective.dueDay).tz('Asia-Tokyo').format('YYYY-MM-DD');
+      res.render('edit', {
+        user: req.user, // TODO:
+        objective: objective
+      });
+    } else {
+      const err = new Error('指定された目標がない、または編集する権限がありません');
+      err.status  = 404;
       next(err);
     }
   });
 });
 
-module.exports = router;
+const isMine = function(req, objective) {
+  return objective && parseInt(objective.createdBy) === parseInt(req.user.id);
+}
+
+ module.exports = router;

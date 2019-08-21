@@ -19,9 +19,9 @@ const Stamp = loader.database.define('stamps', {
     defaultValue: false
    },
   type: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.STRING,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: "circle"
   },
   color: {
     type: Sequelize.INTEGER,

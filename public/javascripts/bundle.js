@@ -119,6 +119,8 @@ var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, 
 var objId = cal.dataset.objid;
 var stampStrs = cal.dataset.stamps; // stamp
 
+var stampTypeMap = new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]);
+console.log(stampMapMap);
 var stampTypes = ["&#x2b55;", " &#x1f603;", "&#x2618;", " &#x1f427;", " &#x1f43e;"];
 
 var setupStampMapMap = function setupStampMapMap(stampStrs) {
@@ -205,7 +207,8 @@ var displayCal = function displayCal(calDate) {
 
         if (todayStr === tdDate) {
           td.style.backgroundColor = 'skyblue';
-        }
+        } // TODO:
+
 
         if (stampMapMap.has(stampName)) {
           if (stampMapMap.get(stampName).get("stampStatus")) {
@@ -233,8 +236,9 @@ var displayCal = function displayCal(calDate) {
 
 var initStampMap = function initStampMap(stampStatus, objId) {
   var stampMap = new Map();
+  var defaultStampType = Array.from(stampTypeMap.keys())[0];
   stampMap.set("stampStatus", stampStatus);
-  stampMap.set("type", 0);
+  stampMap.set("type", defaultStampType);
   stampMap.set("color", 0);
   stampMap.set("objectiveId", objId);
   return stampMap;
@@ -242,9 +246,14 @@ var initStampMap = function initStampMap(stampStatus, objId) {
 
 
 var pressStamp = function pressStamp(elem, type) {
-  elem.innerText = ''; // elem.innerHTML = '&#x2b55;';
+  console.log('aaa');
 
-  elem.innerHTML = stampTypes[4];
+  if (stampTypeMap.has(type)) {
+    console.log('bbb');
+    elem.innerText = ''; // elem.innerHTML = '&#x2b55;';
+
+    elem.innerHTML = stampTypeMap.get(type); // elem.innerHTML = stampTypes[type];
+  }
 };
 
 var removeStamp = function removeStamp(elem, str) {

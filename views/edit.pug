@@ -2,13 +2,18 @@ extends layout
 
 block content
   h3 目標の編集
-  form(method="post", action=`/objectives/${objective.objectiveId}?edit=1`)
+  form(method="post", action=`/objectives/${objective.objectiveId}?edit=1&month=${monthName}`)
     div
       h5 目標名
       input(type="text" name="objectiveName" value=objective.objectiveName)
     div
       h5 頻度（週何回）
-      input(type="text" name="frequency" value=objective.frequency)
+      select(name="frequency")
+        for val in [1, 2, 3, 4, 5, 6, 7]
+          if val === objective.frequency 
+            option(value=val selected)= val
+          else
+            option(value=val)= val
     div
       h5 期限
       input(type="date" name="dueDay" value=objective.formattedDueDay)

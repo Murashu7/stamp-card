@@ -18,7 +18,6 @@ router.get('/', function(req, res, next) {
         objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       });
       const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
-
       res.render('index', {
         title: title,
         user: req.user,

@@ -17,3 +17,7 @@ block content
       tr
         td メモ:
         td(style="white-space:pre;") #{objective.memo}
+  - var isMine = parseInt(user.id) === objective.user.userId
+  if isMine
+    div 
+      a(href=`/objectives/${objective.objectiveId}/edit?month=${month.monthName}`) この予定を編集する

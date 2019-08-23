@@ -83,7 +83,7 @@ describe('/objectives', () => {
               Month.findAll({
                 where: { objectiveId: objectiveId }
               }).then((months) => {
-                assert.equal(months.length, 1, `stamps の要素数は 1 です`);
+                assert.equal(months.length, 1, `months の要素数は 1 です`);
                 assert.equal(months[0].monthName, monthName);
               });
               // テストで作成したデータを削除
@@ -135,6 +135,50 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
                 });
               });
           });
+        });
+    });
+  });
+});
+
+describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
+  before(() => {
+    passportStub.install(app);
+    passportStub.login({ id: 0, username: 'testuser' });
+  });
+
+  after(() => {
+    passportStub.logout();
+    passportStub.uninstall(app);
+  });
+
+  it('目標が編集できる', (done) => {
+    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+      request(app)
+        .post('/objectives')
+        .send({ objectiveName: 'テスト更新目的1', dueDay:'2019-02-01', memo: 'テスト更新メモ1', frequency: 2 })
+        .end((err, res) => {
+          const createdObjectivePath = res.headers.location;
+          const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+          const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+          request(app)
+            .post(`/objectives/${objectiveId}?edit=1&month=${"2019-09-01"}`)
+            .send({ objectiveName: 'テスト更新目的2', dueDay:'2020-02-01', memo: 'テスト更新メモ2', frequency: 2 })
+            .end((err, res) => {
+              Objective.findByPk(objectiveId).then((o) => {
+                assert.equal(o.objectiveName, 'テスト更新目的2');
+                assert.equal(moment(o.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD'), '2020-02-01');
+                assert.equal(o.memo, 'テスト更新メモ2');
+                assert.equal(o.frequency, 2)
+              });
+              Month.findAll({
+                where: { objectiveId: objectiveId },
+                order: [['"objectiveId"', 'ASC']]
+              }).then((months) => {
+                assert.equal(months.length, 1);
+                assert.equal(months[0].monthName, monthName);
+                deleteObjectiveAggregate(objectiveId, done, err);
+              });
+            });
         });
     });
   });

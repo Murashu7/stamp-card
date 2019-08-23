@@ -21,7 +21,9 @@ User.sync().then(() => {
   Objective.sync().then(() => {
     Month.belongsTo(Objective, {foreignKey: 'objectiveId'});
     Month.sync().then(() => {
-      Stamp.belongsTo(Month, {foreignKey: 'monthId'});
+      // TODO: table の結合をしていないので、リレーションの設定は不要？
+      Stamp.belongsTo(Objective, {foreignKey: 'objectiveId'});
+      // Stamp.belongsTo(Month, {foreignKey: 'monthId'});
       Stamp.sync();
     });
   });

@@ -3,12 +3,14 @@ const request = require('supertest');
 const app = require('../app');
 const passportStub = require('passport-stub');
 const moment = require('moment-timezone');
+const assert = require('assert');
+const deleteObjectiveAggregate = require('../routes/objectives').deleteObjectiveAggregate;
 
 const User = require('../models/user');
 const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
-const assert = require('assert');
+
 
 describe('/login', () => {
 
@@ -117,7 +119,6 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
           Month.findOne({
             where: { objectiveId: objectiveId, monthName: monthName }
           }).then((month) => {
-            const userId = 0;
             const stampName = "30";
             request(app)
               .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
@@ -184,24 +185,79 @@ describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
   });
 });
 
-function deleteObjectiveAggregate(objectiveId, done, err) {
-  Stamp.findAll({
-    where: { objectiveId: objectiveId }
-  }).then((stamps) => {
-    const promises = stamps.map((s) => { return s.destroy(); });
-    return Promise.all(promises);
-  }).then(() => {
-    return Month.findAll({
-        where: { objectiveId: objectiveId }
-    });
-  }).then((months) => {
-    const promises = months.map((m) => { return m.destroy(); });
-    return Promise.all(promises);
-  }).then(() => {
-    Objective.findByPk(objectiveId).then((o) => { o.destroy(); });
-    if (err) return done(err);
-      done();
+describe('/objectives/:objectiveId?delete=1', () => {
+  before(() => {
+    passportStub.install(app);
+    passportStub.login({ id: 0, username: 'testuser' });
   });
-}
 
+  after(() => {
+    passportStub.logout();
+    passportStub.uninstall(app);
+  });
 
+  it('目標に関する全ての情報を削除できる', (done) => {
+    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+      request(app)
+        .post('/objectives')
+        .send({ objectiveName: 'テスト削除目標1', memo: 'テスト削除メモ1', frequency: 4, dueDay: '2019-12-01' })
+        .end((err, res) => {
+          const createdObjectivePath = res.headers.location;
+          const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+          const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+
+          // stamp 作成
+          const promiseStamp = Month.findOne({
+            where: { 
+              objectiveId: objectiveId,
+              monthName: monthName
+            }
+          }).then((month) => {
+            const stampName = "1";
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
+                .send({ stampStatus: true })
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });
+          });
+
+          // 削除
+          const promiseDeleted = promiseStamp.then(() => {
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}?delete=1`)
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });
+          });
+
+          // test
+          promiseDeleted.then(() => {
+            const p1 = Stamp.findAll({
+              where: { objectiveId: objectiveId }
+            }).then((stamps) => {
+              assert.equal(stamps.length, 0);
+            });
+            const p2 = Month.findAll({
+              where: { objectiveId: objectiveId }
+            }).then((months) => {
+              assert.equal(months.length, 0);
+            });
+            const p3 = Objective.findByPk(objectiveId).then((objective) => {
+              assert.equal(!objective, true);
+            });
+            Promise.all([p1, p2, p3]).then(() => {
+              if (err) return done(err);
+              done();
+            });
+          });
+        });
+    });
+  });
+});

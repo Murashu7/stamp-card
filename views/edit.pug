@@ -22,4 +22,6 @@ block content
       textarea(name="memo") #{objective.memo}
     div
       button(type="submit") 以上の内容で目標を編集する
-
+  h3 危険な編集
+  form(method="post", action=`/objectives/${objective.objectiveId}?delete=1`)
+    button(type="submit") この目標を削除する

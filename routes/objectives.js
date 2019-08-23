@@ -134,6 +134,10 @@ router.post('/:objectiveId', authenticationEnsurer, (req, res, next) => {
             res.redirect(`/objectives/${objective.objectiveId}/months/${monthName}`);
           } 
         });
+      } else if (parseInt(req.query.delete) === 1) {
+        deleteObjectiveAggregate(req.params.objectiveId, () => {
+          res.redirect('/');
+        });
       } else {
         const err = new Error('不正なリクエストです');
         err.status = 400;
@@ -149,6 +153,29 @@ router.post('/:objectiveId', authenticationEnsurer, (req, res, next) => {
 
 const parseMonthName = function(today) {
   return  moment(today).tz('Asia/Tokyo').format('YYYY-MM');
+}
+
+router.deleteObjectiveAggregate = deleteObjectiveAggregate;
+
+function deleteObjectiveAggregate(objectiveId, done, err) {
+  Stamp.findAll({
+    where: { objectiveId: objectiveId }
+  }).then((stamps) => {
+    const promises = stamps.map((s) => { return s.destroy(); });
+    return Promise.all(promises);
+  }).then(() => {
+    return Month.findAll({
+        where: { objectiveId: objectiveId }
+    });
+  }).then((months) => {
+    const promises = months.map((m) => { return m.destroy(); });
+    return Promise.all(promises);
+  }).then(() => {
+    return Objective.findByPk(objectiveId).then((o) => { o.destroy(); });
+  }).then(() => {
+    if (err) return done(err);
+    done();
+  });
 }
 
 module.exports = router;

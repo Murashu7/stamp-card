@@ -2,20 +2,20 @@ extends layout
 
 block content
   h4 #{objective.objectiveName}
-  p 頻度の達成率：#{objective.freqAchvRate}
-  p 目標達成率：#{objective.objAchvRate}
+  p#freqAchvRate 今日までの達成率：#{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
+  p#objAchvRate 期限日までの達成率：#{objective.objAchvRate_p} % #{objective.objAchvRate_f}
   div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps)#calendar
   div
   table
     tbody
       tr
-        td 頻度:
+        td 頻度（週に何回）
         td #{objective.frequency}
       tr
-        td 期限:
+        td 期限
         td #{objective.formattedDueDay}
       tr
-        td メモ:
+        td メモ
         td(style="white-space:pre;") #{objective.memo}
   - var isMine = parseInt(user.id) === objective.user.userId
   if isMine

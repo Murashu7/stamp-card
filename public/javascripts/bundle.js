@@ -110,7 +110,9 @@ var next = document.createElement("button");
 prev.id = "prev";
 next.id = "next";
 prev.innerText = "前の月";
-next.innerText = "次の月"; // TODO: ここで必要なデータを取得する
+next.innerText = "次の月";
+var freqAchvRate = document.getElementById('freqAchvRate');
+var objAchvRate = document.getElementById('objAchvRate'); // TODO: ここで必要なデータを取得する
 // Server → pug → JS
 
 var calDate = new Date(cal.dataset.calmonth);
@@ -286,9 +288,14 @@ var addStampEventListener = function addStampEventListener(elem, date, stampMapM
     postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
       stampStatus: stampStatus
     }).then(function (data) {
-      return console.log(JSON.stringify(data));
-    }) // JSON-string from `response.json()` call
-    .catch(function (error) {
+      // console.log(typeof JSON.stringify(data)); // JSON-string from `response.json()` call
+      var freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
+      var freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
+      var objAchvRate_p = data["achvRate"]["objAchvRate_p"];
+      var objAchvRate_f = data["achvRate"]["objAchvRate_f"];
+      freqAchvRate.innerText = "\u4ECA\u65E5\u307E\u3067\u306E\u9054\u6210\u7387\uFF1A".concat(freqAchvRate_p, " % ").concat(freqAchvRate_f);
+      objAchvRate.innerText = "\u671F\u9650\u65E5\u307E\u3067\u306E\u9054\u6210\u7387\uFF1A".concat(objAchvRate_p, " % ").concat(objAchvRate_f);
+    }).catch(function (error) {
       return console.error(error);
     });
   }, false);

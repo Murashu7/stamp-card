@@ -10,6 +10,9 @@ next.id = "next";
 prev.innerText = "前の月";
 next.innerText = "次の月";
 
+const freqAchvRate = document.getElementById('freqAchvRate');
+const objAchvRate = document.getElementById('objAchvRate');
+
 // TODO: ここで必要なデータを取得する
 // Server → pug → JS
 const calDate = new Date(cal.dataset.calmonth);
@@ -45,7 +48,6 @@ const setupStampMapMap = function(stampStrs) {
 }
 
 let stampMapMap = setupStampMapMap(stampStrs);
-
 
 const displayCal = function(calDate) {
   const year = makeYear(calDate); 
@@ -163,7 +165,15 @@ const addStampEventListener = function(elem, date, stampMapMap, objId) {
       pressStamp(elem, stampMapMap.get(stampName).get("type"));
     }
     postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
-      .then(data => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
+      .then((data) => {
+        // console.log(typeof JSON.stringify(data)); // JSON-string from `response.json()` call
+        const freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
+        const freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
+        const objAchvRate_p = data["achvRate"]["objAchvRate_p"];
+        const objAchvRate_f = data["achvRate"]["objAchvRate_f"];
+        freqAchvRate.innerText = `今日までの達成率：${freqAchvRate_p} % ${freqAchvRate_f}`;
+        objAchvRate.innerText = `期限日までの達成率：${objAchvRate_p} % ${objAchvRate_f}`;
+      })
       .catch(error => console.error(error));
   }, false);
 }

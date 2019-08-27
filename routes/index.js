@@ -2,11 +2,23 @@ const express = require('express');
 const router = express.Router();
 const Objective = require('../models/objective');
 const Month = require('../models/month');
+const Stamp = require('../models/stamp');
+
 const moment = require('moment-timezone');
+const colorLog = require('../utils/colorLog.js');
+
+const loader = require('../models/sequelize-loader');
+const sequelize = loader.database;
+const aggregateStamps = require('./aggregateStamps');
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   const title = "スタンプカードくん";
+  let storedObjectives = null;
+  const today = moment(new Date);
+  const monthName = moment(today).tz('Asia/Tokyo').format('YYYY-MM');
+
   if (req.user) {
     Objective.findAll({
       where: {
@@ -14,10 +26,16 @@ router.get('/', function(req, res, next) {
       },
       order: [['"updatedAt"', 'DESC']]
     }).then((objectives) => {
-      objectives.forEach((objective) => {
+
+      const promises = objectives.map((objective) => {
         objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
+        return aggregateStamps(objective, today).then(() => {
+          return objective;
+        });
       });
-      const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+      return Promise.all(promises);
+
+    }).then((objectives) => {
       res.render('index', {
         title: title,
         user: req.user,
@@ -29,6 +47,5 @@ router.get('/', function(req, res, next) {
     res.render('index', { title: title, user: req.user });
   }
 });
-
 
 module.exports = router;

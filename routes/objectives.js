@@ -8,6 +8,7 @@ const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 const moment = require('moment-timezone');
+const aggregateStamps = require('./aggregateStamps');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user });
@@ -56,13 +57,13 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
       // TODO: 頻度と目標の達成率
-      objective.freqAchvRate = '50%(20/40)';
-      objective.objAchvRate = '20%(20/100)';
-
-      return Month.findOrCreate({
-        where: { objectiveId: req.params.objectiveId, monthName: req.params.monthName },
-        order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
+      return aggregateStamps(objective, moment(new Date())).then((objective) => {
+        return Month.findOrCreate({
+          where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
+          order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
+        });
       });
+
     } else {
       const err = new Error('指定された目標は見つかりません');
       err.status = 404;

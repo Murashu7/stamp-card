@@ -1,24 +1,38 @@
 extends layout
 
 block content
+  -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
+  -var hasError = errors ? errors.length > 0 : 0
+  if hasError
+    p エラー
+    each error in errors
+      ul
+        li #{errorName[error.param]} : #{error.msg}
   form(method="post" action="/objectives")
     div
       h5 目標
-      input(type="text" name="objectiveName")
+      if objectiveName
+        input(type="text" name="objectiveName" value=objectiveName)
+      else
+        input(type="text" name="objectiveName")
     div
       h5 頻度（週に何回）
       select(name="frequency")
-        option(value="1") 1
-        option(value="2") 2
-        option(value="3") 3
-        option(value="4") 4
-        option(value="5") 5
-        option(value="6") 6
-        option(value="7") 7
+        for val in ["1", "2", "3", "4", "5", "6", "7"]
+          if val === frequency 
+            option(value=val selected)= val
+          else
+            option(value=val)= val
     div
       h5 期限
-      input(type="date" name="dueDay")
+      if dueDay
+        input(type="date" name="dueDay" value=dueDay)
+      else
+        input(type="date" name="dueDay")
     div
       h5 メモ
-      textarea(name="memo")
+      if memo
+        textarea(name="memo") #{memo}
+      else
+        textarea(name="memo")
     button(type="submit") 目標をつくる

@@ -10,31 +10,48 @@ const Stamp = require('../models/stamp');
 const moment = require('moment-timezone');
 const aggregateStamps = require('./aggregateStamps');
 
+const colorLog = require('../utils/colorLog');
+
+const { validationResult } = require("express-validator/check");
+const validators = require('./validator');
+
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user });
 });
 
-router.post('/', authenticationEnsurer, (req, res, next) => {
-  const objectiveId = uuid.v4();
-  const today = new Date();
-
-  Objective.create({
-    objectiveId: objectiveId,
-    objectiveName: req.body.objectiveName.slice(0, 255),
-    memo: req.body.memo,
-    createdBy: req.user.id,
-    createdAt: today,
-    updatedAt: today,
-    dueDay: new Date(req.body.dueDay),
-    frequency: req.body.frequency
-  }).then((objective) => {
-    return Month.create({
-      monthName: parseMonthName(today),
-      objectiveId: objective.objectiveId
+router.post('/', authenticationEnsurer, validators, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.render('new', {
+      user: req.user, 
+      objectiveName: req.body.objectiveName,
+      memo: req.body.memo,
+      dueDay: req.body.dueDay,
+      frequency: req.body.frequency,
+      errors: errors.array()
     });
-  }).then((month) => {
-      res.redirect(`/objectives/${objectiveId}/months/${month.monthName}`);
-  });
+  } else {
+    const objectiveId = uuid.v4();
+    const today = new Date();
+
+    Objective.create({
+      objectiveId: objectiveId,
+      objectiveName: req.body.objectiveName.slice(0, 255),
+      memo: req.body.memo,
+      createdBy: req.user.id,
+      createdAt: today,
+      updatedAt: today,
+      dueDay: new Date(req.body.dueDay),
+      frequency: req.body.frequency
+    }).then((objective) => {
+      return Month.create({
+        monthName: parseMonthName(today),
+        objectiveId: objective.objectiveId
+      });
+    }).then((month) => {
+        res.redirect(`/objectives/${objectiveId}/months/${month.monthName}`);
+    });
+  }
 });
 
 router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, next) => {
@@ -94,7 +111,7 @@ router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
   }).then((objective) => {
     if (isMine(req, objective)) { // 作成者のみが編集フォームを開ける
       const monthName = req.query.month;
-      objective.formattedDueDay = moment(objective.dueDay).tz('Asia-Tokyo').format('YYYY-MM-DD');
+      objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD');
       res.render('edit', {
         // user: req.user, // TODO: この user は必要か？
         objective: objective,

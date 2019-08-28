@@ -103,277 +103,290 @@ function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 
-var week = ['日', '月', '火', '水', '木', '金', '土'];
-var cal = document.getElementById("calendar");
-var prev = document.createElement("button");
-var next = document.createElement("button");
-prev.id = "prev";
-next.id = "next";
-prev.innerText = "前の月";
-next.innerText = "次の月";
-var freqAchvRate = document.getElementById('freqAchvRate');
-var objAchvRate = document.getElementById('objAchvRate'); // TODO: ここで必要なデータを取得する
-// Server → pug → JS
+var pathName = location.pathname;
 
-var calDate = new Date(cal.dataset.calmonth);
-var today = new Date(cal.dataset.today);
-var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
-var objId = cal.dataset.objid;
-var stampStrs = cal.dataset.stamps; // stamp
+if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit?/)) {
+  // TODO: 削除ボタン用
+  var deleteBtn = document.getElementById('deleteBtn');
+  var deleteForm = document.getElementById('deleteForm');
+  deleteBtn.addEventListener('click', function (e) {
+    if (confirm('本当に削除しますか？')) {
+      deleteForm.submit();
+    }
+  }, false);
+} else if (pathName.match(/objectives/)) {
+  var postData = function postData() {
+    var url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    // 既定のオプションには * が付いています
+    return fetch(url, {
+      method: "POST",
+      // *GET, POST, PUT, DELETE, etc.
+      mode: "cors",
+      // no-cors, cors, *same-origin
+      cache: "no-cache",
+      // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: "same-origin",
+      // include, same-origin, *omit
+      headers: {
+        "Content-Type": "application/json; charset=utf-8" // "Content-Type": "application/x-www-form-urlencoded",
 
-var stampTypeObj = {
-  map: new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]),
-  defaultType: function defaultType() {
-    return Array.from(this.map.keys())[0];
-  }
-};
+      },
+      redirect: "follow",
+      // manual, *follow, error
+      referrer: "no-referrer",
+      // no-referrer, *client
+      body: JSON.stringify(data) // 本文のデータ型は "Content-Type" ヘッダーと一致する必要があります
 
-var setupStampMapMap = function setupStampMapMap(stampStrs) {
-  var stampMapMap = new Map();
-  var tmp = stampStrs.match(/\{[^\{\}]+\}/g);
+    }).then(function (response) {
+      return response.json();
+    }); // レスポンスの JSON を解析
+  };
 
-  if (tmp) {
-    tmp.forEach(function (t) {
-      var json = JSON.parse(t);
-      var stampMap = new Map();
+  var week = ['日', '月', '火', '水', '木', '金', '土'];
+  var cal = document.getElementById("calendar");
+  var prev = document.createElement("button");
+  var next = document.createElement("button");
+  prev.id = "prev";
+  next.id = "next";
+  prev.innerText = "前の月";
+  next.innerText = "次の月";
+  var freqAchvRate = document.getElementById('freqAchvRate');
+  var objAchvRate = document.getElementById('objAchvRate'); // TODO: ここで必要なデータを取得する
+  // Server → pug → JS
 
-      for (var _i = 0, _Object$entries = Object.entries(json); _i < _Object$entries.length; _i++) {
-        var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
-            key = _Object$entries$_i[0],
-            value = _Object$entries$_i[1];
+  var calDate = new Date(cal.dataset.calmonth);
+  var today = new Date(cal.dataset.today);
+  var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
+  var objId = cal.dataset.objid;
+  var stampStrs = cal.dataset.stamps; // stamp
 
-        if (key !== 'stampName') {
-          stampMap.set(key, value);
-        }
-      }
+  var stampTypeObj = {
+    map: new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]),
+    defaultType: function defaultType() {
+      return Array.from(this.map.keys())[0];
+    }
+  };
 
-      stampMapMap.set(json.stampName, stampMap);
-    });
-  }
+  var setupStampMapMap = function setupStampMapMap(stampStrs) {
+    var stampMapMap = new Map();
+    var tmp = stampStrs.match(/\{[^\{\}]+\}/g);
 
-  return stampMapMap;
-};
+    if (tmp) {
+      tmp.forEach(function (t) {
+        var json = JSON.parse(t);
+        var stampMap = new Map();
 
-var stampMapMap = setupStampMapMap(stampStrs);
+        for (var _i = 0, _Object$entries = Object.entries(json); _i < _Object$entries.length; _i++) {
+          var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+              key = _Object$entries$_i[0],
+              value = _Object$entries$_i[1];
 
-var displayCal = function displayCal(calDate) {
-  var year = makeYear(calDate);
-  var month = makeMonth(calDate);
-  var day = makeDay(calDate);
-  var firstDay = new Date(calDate.setDate(1)); // その月の初日
-
-  var lastDay = new Date(year, month, 0); // その月の末日
-
-  var startValue = firstDay.getDay(); // カレンダーの開始値( 0 - 6 )
-
-  var endValue = startValue + lastDay.getDate(); // カレンダーの終了値
-
-  var table = document.createElement("table");
-  var tHead = document.createElement("thead");
-  var tBody = document.createElement("tbody");
-  var tr = document.createElement("tr");
-  var h5 = document.createElement("h5");
-  h5.innerText = "".concat(year, "\u5E74").concat(month, "\u6708"); // 全ての子要素を削除
-
-  while (cal.firstChild) {
-    cal.removeChild(cal.firstChild);
-  }
-
-  cal.appendChild(h5);
-  cal.appendChild(prev);
-  cal.appendChild(next);
-  cal.appendChild(table);
-  table.appendChild(tHead);
-  tHead.appendChild(tr);
-
-  for (var i = 0, len = week.length; i < len; i++) {
-    var th = document.createElement("th");
-    tr.appendChild(th);
-    th.innerText = week[i];
-  }
-
-  table.appendChild(tBody);
-  var count = 0;
-  var days = 1;
-
-  for (var _i2 = 0; _i2 < 6; _i2++) {
-    var _tr = document.createElement("tr");
-
-    for (var j = 0, _len = week.length; j < _len; j++) {
-      var td = document.createElement("td");
-
-      if (startValue <= count && count < endValue) {
-        // TODO: stamps
-        td.innerText = days;
-        td.setAttribute('data-day', days);
-        var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
-        var _day = td.dataset.day;
-        var stampName = _day; // 当日の td に背景色をつける
-
-        if (todayStr === tdDate) {
-          td.style.backgroundColor = 'skyblue';
-        } // TODO:
-
-
-        if (stampMapMap.has(stampName)) {
-          if (stampMapMap.get(stampName).get("stampStatus")) {
-            pressStamp(td, stampMapMap.get(stampName).get("type"));
-          } else {
-            removeStamp(td, _day);
+          if (key !== 'stampName') {
+            stampMap.set(key, value);
           }
         }
 
-        addStampEventListener(td, calDate, stampMapMap, objId);
+        stampMapMap.set(json.stampName, stampMap);
+      });
+    }
+
+    return stampMapMap;
+  };
+
+  var stampMapMap = setupStampMapMap(stampStrs);
+
+  var displayCal = function displayCal(calDate) {
+    var year = makeYear(calDate);
+    var month = makeMonth(calDate);
+    var day = makeDay(calDate);
+    var firstDay = new Date(calDate.setDate(1)); // その月の初日
+
+    var lastDay = new Date(year, month, 0); // その月の末日
+
+    var startValue = firstDay.getDay(); // カレンダーの開始値( 0 - 6 )
+
+    var endValue = startValue + lastDay.getDate(); // カレンダーの終了値
+
+    var table = document.createElement("table");
+    var tHead = document.createElement("thead");
+    var tBody = document.createElement("tbody");
+    var tr = document.createElement("tr");
+    var h5 = document.createElement("h5");
+    h5.innerText = "".concat(year, "\u5E74").concat(month, "\u6708"); // 全ての子要素を削除
+
+    while (cal.firstChild) {
+      cal.removeChild(cal.firstChild);
+    }
+
+    cal.appendChild(h5);
+    cal.appendChild(prev);
+    cal.appendChild(next);
+    cal.appendChild(table);
+    table.appendChild(tHead);
+    tHead.appendChild(tr);
+
+    for (var i = 0, len = week.length; i < len; i++) {
+      var th = document.createElement("th");
+      tr.appendChild(th);
+      th.innerText = week[i];
+    }
+
+    table.appendChild(tBody);
+    var count = 0;
+    var days = 1;
+
+    for (var _i2 = 0; _i2 < 6; _i2++) {
+      var _tr = document.createElement("tr");
+
+      for (var j = 0, _len = week.length; j < _len; j++) {
+        var td = document.createElement("td");
+
+        if (startValue <= count && count < endValue) {
+          // TODO: stamps
+          td.innerText = days;
+          td.setAttribute('data-day', days);
+          var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
+          var _day = td.dataset.day;
+          var stampName = _day; // 当日の td に背景色をつける
+
+          if (todayStr === tdDate) {
+            td.style.backgroundColor = 'skyblue';
+          } // TODO:
+
+
+          if (stampMapMap.has(stampName)) {
+            if (stampMapMap.get(stampName).get("stampStatus")) {
+              pressStamp(td, stampMapMap.get(stampName).get("type"));
+            } else {
+              removeStamp(td, _day);
+            }
+          }
+
+          addStampEventListener(td, calDate, stampMapMap, objId);
+
+          _tr.appendChild(td);
+
+          days++;
+        }
+
+        count++;
 
         _tr.appendChild(td);
-
-        days++;
       }
 
-      count++;
-
-      _tr.appendChild(td);
+      tBody.appendChild(_tr);
     }
+  };
 
-    tBody.appendChild(_tr);
-  }
-};
+  var initStampMap = function initStampMap(stampStatus, objId) {
+    var stampMap = new Map();
+    var defaultStampType = stampTypeObj.defaultType();
+    stampMap.set("stampStatus", stampStatus);
+    stampMap.set("type", defaultStampType);
+    stampMap.set("color", 0);
+    stampMap.set("objectiveId", objId);
+    return stampMap;
+  };
 
-var initStampMap = function initStampMap(stampStatus, objId) {
-  var stampMap = new Map();
-  var defaultStampType = stampTypeObj.defaultType();
-  stampMap.set("stampStatus", stampStatus);
-  stampMap.set("type", defaultStampType);
-  stampMap.set("color", 0);
-  stampMap.set("objectiveId", objId);
-  return stampMap;
-};
+  var pressStamp = function pressStamp(elem, type) {
+    if (stampTypeObj.map.has(type)) {
+      elem.innerText = '';
+      elem.innerHTML = stampTypeObj.map.get(type);
+    }
+  };
 
-var pressStamp = function pressStamp(elem, type) {
-  if (stampTypeObj.map.has(type)) {
-    elem.innerText = '';
-    elem.innerHTML = stampTypeObj.map.get(type);
-  }
-};
+  var removeStamp = function removeStamp(elem, str) {
+    elem.innerHTML = '';
+    elem.innerText = str;
+  };
 
-var removeStamp = function removeStamp(elem, str) {
-  elem.innerHTML = '';
-  elem.innerText = str;
-};
+  var addStampEventListener = function addStampEventListener(elem, date, stampMapMap, objId) {
+    elem.addEventListener('click', function (e) {
+      // TODO: 
+      var day = elem.dataset.day;
+      var stampName = day;
+      var tdDate = "".concat(makeYear(date), "-").concat(makeMonth(date), "-").concat(day);
+      var monthName = makeMonthName(date);
+      var stampStatus = false;
 
-var addStampEventListener = function addStampEventListener(elem, date, stampMapMap, objId) {
-  elem.addEventListener('click', function (e) {
-    // TODO: 
-    var day = elem.dataset.day;
-    var stampName = day;
-    var tdDate = "".concat(makeYear(date), "-").concat(makeMonth(date), "-").concat(day);
-    var monthName = makeMonthName(date);
-    var stampStatus = false;
+      if (stampMapMap.has(stampName)) {
+        stampStatus = !stampMapMap.get(stampName).get("stampStatus");
+        stampMapMap.get(stampName).set("stampStatus", stampStatus);
 
-    if (stampMapMap.has(stampName)) {
-      stampStatus = !stampMapMap.get(stampName).get("stampStatus");
-      stampMapMap.get(stampName).set("stampStatus", stampStatus);
-
-      if (stampStatus) {
-        pressStamp(elem, stampMapMap.get(stampName).get("type"));
+        if (stampStatus) {
+          pressStamp(elem, stampMapMap.get(stampName).get("type"));
+        } else {
+          removeStamp(elem, day);
+        }
       } else {
-        removeStamp(elem, day);
+        stampStatus = !stampStatus;
+        stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+        pressStamp(elem, stampMapMap.get(stampName).get("type"));
       }
-    } else {
-      stampStatus = !stampStatus;
-      stampMapMap.set(stampName, initStampMap(stampStatus, objId));
-      pressStamp(elem, stampMapMap.get(stampName).get("type"));
-    }
 
-    postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
-      stampStatus: stampStatus
-    }).then(function (data) {
-      // console.log(typeof JSON.stringify(data)); // JSON-string from `response.json()` call
-      var freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
-      var freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
-      var objAchvRate_p = data["achvRate"]["objAchvRate_p"];
-      var objAchvRate_f = data["achvRate"]["objAchvRate_f"];
-      freqAchvRate.innerText = "\u4ECA\u65E5\u307E\u3067\u306E\u9054\u6210\u7387\uFF1A".concat(freqAchvRate_p, " % ").concat(freqAchvRate_f);
-      objAchvRate.innerText = "\u671F\u9650\u65E5\u307E\u3067\u306E\u9054\u6210\u7387\uFF1A".concat(objAchvRate_p, " % ").concat(objAchvRate_f);
-    }).catch(function (error) {
-      return console.error(error);
-    });
+      postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
+        stampStatus: stampStatus
+      }).then(function (data) {
+        // console.log(typeof JSON.stringify(data)); // JSON-string from `response.json()` call
+        var freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
+        var freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
+        var objAchvRate_p = data["achvRate"]["objAchvRate_p"];
+        var objAchvRate_f = data["achvRate"]["objAchvRate_f"];
+        freqAchvRate.innerText = "".concat(freqAchvRate_p, " % ").concat(freqAchvRate_f);
+        objAchvRate.innerText = "".concat(objAchvRate_p, " % ").concat(objAchvRate_f);
+      }).catch(function (error) {
+        return console.error(error);
+      });
+    }, false);
+  };
+
+  var makeYear = function makeYear(date) {
+    return date.getFullYear();
+  };
+
+  var makeMonth = function makeMonth(date) {
+    return date.getMonth() + 1;
+  };
+
+  var makeDay = function makeDay(date) {
+    return date.getDate();
+  };
+
+  var makePrevMonth = function makePrevMonth(date) {
+    return new Date(date.setDate(0)); // 先月末日
+  };
+
+  var makeNextMonth = function makeNextMonth(date) {
+    var lastDay = new Date(makeYear(date), makeMonth(date), 0).getDate(); // その月の末日
+
+    return new Date(date.setDate(lastDay + 1)); // 次月の初日
+  };
+
+  var makeMonthName = function makeMonthName(date) {
+    return moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(date).tz('Asia/Tokyo').format('YYYY-MM');
+  };
+
+  var submitForm = function submitForm(objId, monthName) {
+    var form = document.createElement('form');
+    form.action = "/objectives/".concat(objId, "/months/").concat(monthName);
+    form.method = 'get';
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  prev.addEventListener('click', function (e) {
+    var prevMonth = makePrevMonth(calDate);
+    var monthName = makeMonthName(prevMonth);
+    submitForm(objId, monthName);
   }, false);
-};
-
-function postData() {
-  var url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-  var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  // 既定のオプションには * が付いています
-  return fetch(url, {
-    method: "POST",
-    // *GET, POST, PUT, DELETE, etc.
-    mode: "cors",
-    // no-cors, cors, *same-origin
-    cache: "no-cache",
-    // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: "same-origin",
-    // include, same-origin, *omit
-    headers: {
-      "Content-Type": "application/json; charset=utf-8" // "Content-Type": "application/x-www-form-urlencoded",
-
-    },
-    redirect: "follow",
-    // manual, *follow, error
-    referrer: "no-referrer",
-    // no-referrer, *client
-    body: JSON.stringify(data) // 本文のデータ型は "Content-Type" ヘッダーと一致する必要があります
-
-  }).then(function (response) {
-    return response.json();
-  }); // レスポンスの JSON を解析
+  next.addEventListener('click', function (e) {
+    var nextMonth = makeNextMonth(calDate);
+    var monthName = makeMonthName(nextMonth);
+    submitForm(objId, monthName);
+  }, false);
+  displayCal(calDate);
 }
-
-var makeYear = function makeYear(date) {
-  return date.getFullYear();
-};
-
-var makeMonth = function makeMonth(date) {
-  return date.getMonth() + 1;
-};
-
-var makeDay = function makeDay(date) {
-  return date.getDate();
-};
-
-var makePrevMonth = function makePrevMonth(date) {
-  return new Date(date.setDate(0)); // 先月末日
-};
-
-var makeNextMonth = function makeNextMonth(date) {
-  var lastDay = new Date(makeYear(date), makeMonth(date), 0).getDate(); // その月の末日
-
-  return new Date(date.setDate(lastDay + 1)); // 次月の初日
-};
-
-var makeMonthName = function makeMonthName(date) {
-  return moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(date).tz('Asia/Tokyo').format('YYYY-MM');
-};
-
-var submitForm = function submitForm(objId, monthName) {
-  var form = document.createElement('form');
-  form.action = "/objectives/".concat(objId, "/months/").concat(monthName);
-  form.method = 'get';
-  document.body.appendChild(form);
-  form.submit();
-};
-
-prev.addEventListener('click', function (e) {
-  var prevMonth = makePrevMonth(calDate);
-  var monthName = makeMonthName(prevMonth);
-  submitForm(objId, monthName);
-}, false);
-next.addEventListener('click', function (e) {
-  var nextMonth = makeNextMonth(calDate);
-  var monthName = makeMonthName(nextMonth);
-  submitForm(objId, monthName);
-}, false);
-displayCal(calDate);
 
 /***/ }),
 /* 1 */

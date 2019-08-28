@@ -2,8 +2,10 @@ extends layout
 
 block content
   h4 #{objective.objectiveName}
-  p#freqAchvRate 今日までの達成率：#{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
-  p#objAchvRate 期限日までの達成率：#{objective.objAchvRate_p} % #{objective.objAchvRate_f}
+  p 今日までの達成率：
+    span#freqAchvRate #{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
+  p 期限日までの達成率：
+    span#objAchvRate #{objective.objAchvRate_p} % #{objective.objAchvRate_f}
   div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps)#calendar
   div
   table

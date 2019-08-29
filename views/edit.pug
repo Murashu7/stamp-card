@@ -1,35 +1,35 @@
 extends layout
 
 block content
-  h3 目標の編集
-  div#errorMsg
-    -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
-    -var hasError = errors ? errors.length > 0 : 0
-    if hasError
+  h3.my-3 目標の編集
+  -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
+  -var hasError = errors ? errors.length > 0 : 0
+  if hasError
+    div.border.border-danger.my-2.p-4
       p エラー
       each error in errors
-        ul
+        ul.list-group
           li #{errorName[error.param]} : #{error.msg}
   form(method="post", action=`/objectives/${objectiveId}?edit=1&month=${monthName}`)
-    div
-      h5 目標名
-      input(type="text" name="objectiveName" value=objectiveName)
-    div
-      h5 頻度（週何回）
-      select(name="frequency")
+    div.form-group
+      label(for="objectiveName") 目標名
+      input(type="text" name="objectiveName" value=objectiveName).form-control
+    div.form-group
+      label(for="frequency") 頻度（週何回）
+      select(name="frequency").form-control
         for val in [1, 2, 3, 4, 5, 6, 7]
           if val == frequency 
             option(value=val selected)= val
           else
             option(value=val)= val
+    div.form-group
+      label(for="dueDay") 期限
+      input(type="date" name="dueDay" value=formattedDueDay).form-control
+    div.form-group
+      label(for="memo") メモ
+      textarea(name="memo").form-control #{memo}
     div
-      h5 期限
-      input(type="date" name="dueDay" value=formattedDueDay)
-    div
-      h5 メモ
-      textarea(name="memo") #{memo}
-    div
-      button(type="submit") 以上の内容で目標を編集する
-  h3 危険な編集
+      button(type="submit").btn.btn-info 以上の内容で目標を編集する
+  h5.mt-5 危険な編集
   form(id="deleteForm" method="post", action=`/objectives/${objectiveId}?delete=1` onsubmit="return false;")
-    button(id="deleteBtn") この目標を削除する
+    button(id="deleteBtn").btn.btn-danger この目標を削除する

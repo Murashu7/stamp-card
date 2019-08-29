@@ -1,25 +1,24 @@
 extends layout
 
 block content
-  h4 #{objective.objectiveName}
+  h3.my-3 #{objective.objectiveName}
   p 今日までの達成率：
     span#freqAchvRate #{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
   p 期限日までの達成率：
     span#objAchvRate #{objective.objAchvRate_p} % #{objective.objAchvRate_f}
   div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps)#calendar
-  div
-  table
+  table.table.table-borderless
     tbody
       tr
-        td 頻度（週に何回）
+        th 頻度（週に何回）
         td #{objective.frequency}
       tr
-        td 期限
+        th 期限
         td #{objective.formattedDueDay}
       tr
-        td メモ
+        th メモ
         td(style="white-space:pre;") #{objective.memo}
   - var isMine = parseInt(user.id) === objective.user.userId
   if isMine
     div 
-      a(href=`/objectives/${objective.objectiveId}/edit?month=${month.monthName}`) この予定を編集する
+      a(href=`/objectives/${objective.objectiveId}/edit?month=${month.monthName}`).btn.btn-info この予定を編集する

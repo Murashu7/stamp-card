@@ -1,5 +1,10 @@
 'use strict';
 import moment from 'moment-timezone';
+import $ from 'jquery';
+
+const global = Function('return this;')();
+global.jQuery = $;
+import bootstrap from 'bootstrap';
 
 const pathName = location.pathname;
 const queryStrs = location.search;
@@ -81,16 +86,38 @@ if (pathName.match(/objectives\/new/)) {
     const tBody = document.createElement("tbody");
     const tr = document.createElement("tr");
     const h5 = document.createElement("h5");
+    const tableTitle_btns = document.createElement("div");
+    const tableBtns = document.createElement("div");
+    
     h5.innerText = `${year}年${month}月`;
+    // bootstrap 用 class
+    table.classList.add("table");
+    table.classList.add("table-bordered");
+    tableTitle_btns.classList.add("d-flex");
+    tableTitle_btns.classList.add("justify-content-between");
+    tableTitle_btns.classList.add("mt-5");
+    tableTitle_btns.classList.add("mb-1");
+    prev.classList.add("mr-2");
+
+    // h5.classList.add("mt-4");
+    // prev.classList.add("m-2");
+    // next.classList.add("m-2");
+
+
+    tableBtns.appendChild(prev);
+    tableBtns.appendChild(next);
+    tableTitle_btns.appendChild(h5);
+    tableTitle_btns.appendChild(tableBtns);
 
     // 全ての子要素を削除
     while (cal.firstChild) {
       cal.removeChild(cal.firstChild);
     }
 
-    cal.appendChild(h5);
-    cal.appendChild(prev);
-    cal.appendChild(next);
+    // cal.appendChild(h5);
+    // cal.appendChild(prev);
+    // cal.appendChild(next);
+    cal.appendChild(tableTitle_btns);
     cal.appendChild(table);
     table.appendChild(tHead);
     tHead.appendChild(tr);
@@ -130,7 +157,7 @@ if (pathName.match(/objectives\/new/)) {
           addStampEventListener(td, calDate, stampMapMap, objId);
           tr.appendChild(td)  
           days++;
-        }
+        } 
         count++;
         tr.appendChild(td)  
       }

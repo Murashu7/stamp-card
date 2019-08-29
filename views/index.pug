@@ -1,34 +1,32 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
-  div
-    if user
-      div
-        a(href="/logout") #{user.username} をログアウト
-      div
-        a(href="/objectives/new") 目標を作る
-      -var hasObjective = objectives.length > 0
-      if hasObjective
-        h3 あなたの目標一覧
-        table
-          thead
-            tr
-              th 目的
-              th 頻度（週に何回）
-              th 今日までの達成率
-              th 期限
-              th 期限までの達成率
-          tbody
-          each objective in objectives
-            tr
-              td
-                a(href=`/objectives/${objective.objectiveId}/months/${monthName}`) #{objective.objectiveName}
-              td #{objective.frequency}
-              td #{objective.freqAchvRate_p} %
-              td #{objective.formattedDueDay}
-              td #{objective.objAchvRate_p} %
-    else
-      div
-        a(href="/login") ログイン
+  if user
+    div.d-flex.justify-content-between.my-5
+      h3 あなたの目標一覧
+      a(href="/objectives/new").btn.btn-info 目標を作る
+    -var hasObjective = objectives.length > 0
+    if hasObjective
+      table.table
+        thead
+          tr
+            th 目的
+            th 頻度（週に何回）
+            th 今日までの達成率
+            th 期限
+            th 期限までの達成率
+        tbody
+        each objective in objectives
+          tr
+            td
+              a(href=`/objectives/${objective.objectiveId}/months/${monthName}`) #{objective.objectiveName}
+            td #{objective.frequency}
+            td #{objective.freqAchvRate_p} %
+            td #{objective.formattedDueDay}
+            td #{objective.objAchvRate_p} %
+  else
+    div.jumbotron.my-3
+      h1.display-4.mb-5 スタンプを押して目標管理！
+      p.lead 日々の目標の進捗を管理するアプリです。<br>GitHub アカウントと連携してご利用いただけます。<br>その日の目標を達成したら、スタンプを押していきましょう！<br>
+      h2.display-5 夏休みのラジオ体操で押したスタンプカードのような、シンプルなアプリです！
+      a(href="/login").btn.btn-info.my-3 ログイン

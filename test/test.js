@@ -30,7 +30,7 @@ describe('/login', () => {
     request(app)
       .get('/login')
       .expect('Content-Type', 'text/html; charset=utf-8')
-      .expect(/<a href="\/auth\/github"/)
+      .expect(/<a class="btn btn-info my-3" href="\/auth\/github"/)
       .expect(200, done);
   });
 
@@ -65,7 +65,7 @@ describe('/objectives', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テスト目的1', dueDay:'2019-09-01', memo: 'テストメモ1', frequency: 4, })
+        .send({ objectiveName: 'テスト目的1', dueDay:'2025-09-01', memo: 'テストメモ1', frequency: 4, })
         .expect('Location', /objectives/)
         .expect(302)
         .end((err, res) => {
@@ -74,7 +74,7 @@ describe('/objectives', () => {
             .get(createdObjectivePath)
             // 作成された目的が表示されていることをテストする
             .expect(/テスト目的1/)
-            .expect(/2019\/09\/01/)
+            .expect(/2025\/09\/01/)
             .expect(/4/)
             .expect(/テストメモ1/)
             .expect(200)
@@ -111,7 +111,7 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テストスタンプ更新目的1', dueDay:'2019-09-01', memo: 'テストスタンプ更新メモ1', frequency: 4, })
+        .send({ objectiveName: 'テストスタンプ更新目的1', dueDay:'2025-09-01', memo: 'テストスタンプ更新メモ1', frequency: 4, })
         .end((err, res) => {
           const createdObjectivePath = res.header.location;
           const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
@@ -123,7 +123,8 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
             request(app)
               .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
               .send({ stampStatus: true })
-              .expect('{"status":"OK","stampStatus":true}')
+              // テストを実行した日によって集計結果が変わってくる
+              .expect('{"status":"OK","stampStatus":true,"achvRate":{"freqAchvRate_p":25,"freqAchvRate_f":"( 1 ／ 4 )","objAchvRate_p":0,"objAchvRate_f":"( 1 ／ 1256 )"}}')
               .end((err, res) => {
                 Stamp.findAll({
                   where: { objectiveId: objectiveId }
@@ -156,18 +157,18 @@ describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テスト更新目的1', dueDay:'2019-02-01', memo: 'テスト更新メモ1', frequency: 2 })
+        .send({ objectiveName: 'テスト更新目的1', dueDay:'2025-09-01', memo: 'テスト更新メモ1', frequency: 2 })
         .end((err, res) => {
           const createdObjectivePath = res.headers.location;
           const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
           const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
           request(app)
-            .post(`/objectives/${objectiveId}?edit=1&month=${"2019-09-01"}`)
-            .send({ objectiveName: 'テスト更新目的2', dueDay:'2020-02-01', memo: 'テスト更新メモ2', frequency: 2 })
+            .post(`/objectives/${objectiveId}?edit=1&month=${"2025-09-01"}`)
+            .send({ objectiveName: 'テスト更新目的2', dueDay:'2030-02-01', memo: 'テスト更新メモ2', frequency: 2 })
             .end((err, res) => {
               Objective.findByPk(objectiveId).then((o) => {
                 assert.equal(o.objectiveName, 'テスト更新目的2');
-                assert.equal(moment(o.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD'), '2020-02-01');
+                assert.equal(moment(o.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD'), '2030-02-01');
                 assert.equal(o.memo, 'テスト更新メモ2');
                 assert.equal(o.frequency, 2)
               });

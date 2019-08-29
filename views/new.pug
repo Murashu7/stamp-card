@@ -1,39 +1,39 @@
 extends layout
 
 block content
-  div#errorMsg
-    -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
-    -var hasError = errors ? errors.length > 0 : false
-    if hasError
+  -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
+  -var hasError = errors ? errors.length > 0 : false
+  if hasError
+    div.border.border-danger.my-2.p-4
       p エラー
       each error in errors
-        ul
+        ul.list-group
           li #{errorName[error.param]} : #{error.msg}
-  form(method="post" action="/objectives")
-    div
-      h5 目標
+  form(method="post" action="/objectives").my-3
+    div.form-group
+      label(for="objectiveName") 目標名
       if objectiveName
-        input(type="text" name="objectiveName" value=objectiveName)
+        input(type="text" name="objectiveName" value=objectiveName).form-control
       else
-        input(type="text" name="objectiveName")
-    div
-      h5 頻度（週に何回）
-      select(name="frequency")
+        input(type="text" name="objectiveName").form-control
+    div.form-group
+      label(for="frequency") 頻度（週何回）
+      select(name="frequency").form-control
         for val in [1, 2, 3, 4, 5, 6, 7]
           if val == frequency 
             option(value=val selected)= val
           else
             option(value=val)= val
-    div
-      h5 期限
+    div.form-group
+      label(for="dueDay") 期限
       if dueDay
-        input(type="date" name="dueDay" value=dueDay)
+        input(type="date" name="dueDay" value=dueDay).form-control
       else
-        input(type="date" name="dueDay")
-    div
-      h5 メモ
+        input(type="date" name="dueDay").form-control
+    div.form-group
+      label(for="memo") メモ
       if memo
-        textarea(name="memo") #{memo}
+        textarea(name="memo").form-control #{memo}
       else
-        textarea(name="memo")
-    button(type="submit") 目標をつくる
+        textarea(name="memo").form-control
+    button(type="submit").btn.btn-info 目標をつくる

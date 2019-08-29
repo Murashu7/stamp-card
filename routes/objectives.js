@@ -113,6 +113,7 @@ router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
       const monthName = req.query.month;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD');
       res.render('edit', {
+        user: req.user,
         objectiveId: objective.objectiveId,
         objectiveName: objective.objectiveName,
         frequency: objective.frequency,

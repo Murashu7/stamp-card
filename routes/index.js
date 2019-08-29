@@ -29,9 +29,7 @@ router.get('/', function(req, res, next) {
 
       const promises = objectives.map((objective) => {
         objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
-        return aggregateStamps(objective, today).then(() => {
-          return objective;
-        });
+        return aggregateStamps(objective, today);
       });
       return Promise.all(promises);
 

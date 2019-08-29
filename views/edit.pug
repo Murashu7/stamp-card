@@ -2,26 +2,34 @@ extends layout
 
 block content
   h3 目標の編集
-  form(method="post", action=`/objectives/${objective.objectiveId}?edit=1&month=${monthName}`)
+  div#errorMsg
+    -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
+    -var hasError = errors ? errors.length > 0 : 0
+    if hasError
+      p エラー
+      each error in errors
+        ul
+          li #{errorName[error.param]} : #{error.msg}
+  form(method="post", action=`/objectives/${objectiveId}?edit=1&month=${monthName}`)
     div
       h5 目標名
-      input(type="text" name="objectiveName" value=objective.objectiveName)
+      input(type="text" name="objectiveName" value=objectiveName)
     div
       h5 頻度（週何回）
       select(name="frequency")
         for val in [1, 2, 3, 4, 5, 6, 7]
-          if val === objective.frequency 
+          if val == frequency 
             option(value=val selected)= val
           else
             option(value=val)= val
     div
       h5 期限
-      input(type="date" name="dueDay" value=objective.formattedDueDay)
+      input(type="date" name="dueDay" value=formattedDueDay)
     div
       h5 メモ
-      textarea(name="memo") #{objective.memo}
+      textarea(name="memo") #{memo}
     div
       button(type="submit") 以上の内容で目標を編集する
   h3 危険な編集
-  form(id="deleteForm" method="post", action=`/objectives/${objective.objectiveId}?delete=1` onsubmit="return false;")
+  form(id="deleteForm" method="post", action=`/objectives/${objectiveId}?delete=1` onsubmit="return false;")
     button(id="deleteBtn") この目標を削除する

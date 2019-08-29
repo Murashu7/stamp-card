@@ -1,4 +1,5 @@
 'use strict'
+
 const express = require('express');
 const router = express.Router();
 const authenticationEnsurer = require('./authentication-ensurer');
@@ -35,7 +36,7 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationE
       });
     }
   }).then(() => {
-    // TODO: stamp 集計操作
+    // stamp 集計操作
     return Objective.findOne({
       where: { objectiveId: objectiveId }
     }).then((objective) => {

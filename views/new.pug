@@ -1,13 +1,14 @@
 extends layout
 
 block content
-  -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
-  -var hasError = errors ? errors.length > 0 : 0
-  if hasError
-    p エラー
-    each error in errors
-      ul
-        li #{errorName[error.param]} : #{error.msg}
+  div#errorMsg
+    -var errorName = { objectiveName: "目標", frequency: "頻度", dueDay: "期限", memo: "メモ" }
+    -var hasError = errors ? errors.length > 0 : false
+    if hasError
+      p エラー
+      each error in errors
+        ul
+          li #{errorName[error.param]} : #{error.msg}
   form(method="post" action="/objectives")
     div
       h5 目標
@@ -18,8 +19,8 @@ block content
     div
       h5 頻度（週に何回）
       select(name="frequency")
-        for val in ["1", "2", "3", "4", "5", "6", "7"]
-          if val === frequency 
+        for val in [1, 2, 3, 4, 5, 6, 7]
+          if val == frequency 
             option(value=val selected)= val
           else
             option(value=val)= val

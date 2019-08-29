@@ -104,9 +104,10 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 
 var pathName = location.pathname;
+var queryStrs = location.search;
 
-if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit?/)) {
-  // TODO: 削除ボタン用
+if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || queryStrs.match(/edit/)) {
+  // 削除フォーム
   var deleteBtn = document.getElementById('deleteBtn');
   var deleteForm = document.getElementById('deleteForm');
   deleteBtn.addEventListener('click', function (e) {

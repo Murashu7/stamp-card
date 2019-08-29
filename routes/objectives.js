@@ -13,7 +13,7 @@ const aggregateStamps = require('./aggregateStamps');
 const colorLog = require('../utils/colorLog');
 
 const { validationResult } = require("express-validator/check");
-const validators = require('./validator');
+const validators = require('./validators');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user });
@@ -73,7 +73,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       storedObjective = objective;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
-      // TODO: 頻度と目標の達成率
+      // 頻度と目標の達成率
       return aggregateStamps(objective, moment(new Date())).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
@@ -113,8 +113,10 @@ router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
       const monthName = req.query.month;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD');
       res.render('edit', {
-        // user: req.user, // TODO: この user は必要か？
-        objective: objective,
+        objectiveId: objective.objectiveId,
+        objectiveName: objective.objectiveName,
+        frequency: objective.frequency,
+        formattedDueDay: objective.formattedDueDay,
         monthName: monthName
       });
     } else {
@@ -129,44 +131,57 @@ const isMine = function(req, objective) {
   return objective && parseInt(objective.createdBy) === parseInt(req.user.id);
 }
 
-router.post('/:objectiveId', authenticationEnsurer, (req, res, next) => {
+router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next) => {
   const today = new Date();
-
-  Objective.findOne({
-    where: { objectiveId: req.params.objectiveId }
-  }).then((objective) => {
-    if (objective && isMine(req, objective)) {
-      if (parseInt(req.query.edit) === 1) {
-        const updatedAt = today;
-        objective.update({
-          objectiveId: objective.objectiveId,
-          objectiveName: req.body.objectiveName.slice(0, 255),
-          memo: req.body.memo,
-          createdBy: req.user.id,
-          updatedAt: updatedAt,
-          dueDay: new Date(req.body.dueDay),
-          frequency: req.body.frequency
-        }).then((objective) => {
-          const monthName = req.query.month || parseMonthName(today);
-          if (monthName) {
-            res.redirect(`/objectives/${objective.objectiveId}/months/${monthName}`);
-          } 
-        });
-      } else if (parseInt(req.query.delete) === 1) {
-        deleteObjectiveAggregate(req.params.objectiveId, () => {
-          res.redirect('/');
-        });
+  const errors = validationResult(req);
+  if (!errors.isEmpty() && parseInt(req.query.edit) === 1) {
+    res.render('edit', {
+      user: req.user, 
+      objectiveId: req.params.objectiveId,
+      objectiveName: req.body.objectiveName,
+      memo: req.body.memo,
+      formattedDueDay: req.body.dueDay,
+      frequency: req.body.frequency,
+      monthName: req.query.month,
+      errors: errors.array()
+    });
+  } else {
+    Objective.findOne({
+      where: { objectiveId: req.params.objectiveId }
+    }).then((objective) => {
+      if (objective && isMine(req, objective)) {
+        if (parseInt(req.query.edit) === 1) {
+          const updatedAt = today;
+          objective.update({
+            objectiveId: objective.objectiveId,
+            objectiveName: req.body.objectiveName.slice(0, 255),
+            memo: req.body.memo,
+            createdBy: req.user.id,
+            updatedAt: updatedAt,
+            dueDay: new Date(req.body.dueDay),
+            frequency: req.body.frequency
+          }).then((objective) => {
+            const monthName = req.query.month || parseMonthName(today);
+            if (monthName) {
+              res.redirect(`/objectives/${objective.objectiveId}/months/${monthName}`);
+            } 
+          });
+        } else if (parseInt(req.query.delete) === 1) {
+          deleteObjectiveAggregate(req.params.objectiveId, () => {
+            res.redirect('/');
+          });
+        } else {
+          const err = new Error('不正なリクエストです');
+          err.status = 400;
+          next(err);
+        }
       } else {
-        const err = new Error('不正なリクエストです');
-        err.status = 400;
+        const err = new Error('指定された目標がない、または編集する権限がありません');
+        err.status = 404;
         next(err);
       }
-    } else {
-      const err = new Error('指定された目標がない、または編集する権限がありません');
-      err.status = 404;
-      next(err);
-    }
-  });
+    });
+  }
 });
 
 const parseMonthName = function(today) {

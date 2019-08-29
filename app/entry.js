@@ -2,10 +2,12 @@
 import moment from 'moment-timezone';
 
 const pathName = location.pathname;
+const queryStrs = location.search;
+
 if (pathName.match(/objectives\/new/)) {
 
-} else if (pathName.match(/edit?/)) {
-  // TODO: 削除ボタン用
+} else if (pathName.match(/edit/) || queryStrs.match(/edit/)) {
+  // 削除フォーム
   const deleteBtn = document.getElementById('deleteBtn');
   const deleteForm = document.getElementById('deleteForm');
 
@@ -16,6 +18,7 @@ if (pathName.match(/objectives\/new/)) {
   }, false);
 
 } else if (pathName.match(/objectives/)) {
+
   const week = ['日', '月', '火', '水', '木', '金', '土'];
   const cal = document.getElementById("calendar");
   const prev = document.createElement("button");

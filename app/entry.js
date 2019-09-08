@@ -1,4 +1,5 @@
 'use strict';
+const stampTypeObj = require('../routes/stamp-type');
 import moment from 'moment-timezone';
 import $ from 'jquery';
 
@@ -43,14 +44,7 @@ if (pathName.match(/objectives\/new/)) {
   const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
   const objId = cal.dataset.objid;
   const stampStrs = cal.dataset.stamps;
-
-  // stamp
-  const stampTypeObj = {
-    map: new Map([["circle", "&#x2b55;"], ["check", "&#x2705;"], ["smile", "&#x1f603;"], ["heart", "&#x2764;"], ["star", "U+2B50"], ["bell", "&#x1f514;"]]),
-    defaultType: function() {
-      return Array.from(this.map.keys())[0];
-    }
-  }
+  const stampType = cal.dataset.stamptype;
 
   const setupStampMapMap = function(stampStrs) {
     let stampMapMap = new Map();
@@ -71,6 +65,7 @@ if (pathName.match(/objectives\/new/)) {
   }
 
   let stampMapMap = setupStampMapMap(stampStrs);
+  console.log(stampMapMap);
 
   const displayCal = function(calDate) {
     const year = makeYear(calDate); 
@@ -99,11 +94,6 @@ if (pathName.match(/objectives\/new/)) {
     tableTitle_btns.classList.add("mb-1");
     prev.classList.add("mr-2");
 
-    // h5.classList.add("mt-4");
-    // prev.classList.add("m-2");
-    // next.classList.add("m-2");
-
-
     tableBtns.appendChild(prev);
     tableBtns.appendChild(next);
     tableTitle_btns.appendChild(h5);
@@ -114,9 +104,6 @@ if (pathName.match(/objectives\/new/)) {
       cal.removeChild(cal.firstChild);
     }
 
-    // cal.appendChild(h5);
-    // cal.appendChild(prev);
-    // cal.appendChild(next);
     cal.appendChild(tableTitle_btns);
     cal.appendChild(table);
     table.appendChild(tHead);
@@ -124,7 +111,14 @@ if (pathName.match(/objectives\/new/)) {
 
     for (let i = 0, len = week.length; i < len; i++) {
       let th = document.createElement("th");
+      th.classList.add("text-center");
+      th.classList.add("p-1");
       tr.appendChild(th);
+      if (week[i] === '日') {
+        th.classList.add('text-danger');
+      } else if (week[i] === '土') {
+        th.classList.add('text-primary');
+      }
       th.innerText = week[i];
     }
     table.appendChild(tBody);
@@ -135,6 +129,9 @@ if (pathName.match(/objectives\/new/)) {
       let tr = document.createElement("tr");
       for (let j = 0, len = week.length; j < len; j++) {
         let td = document.createElement("td");
+        td.classList.add("text-center");
+        td.classList.add("p-1");
+        td.classList.add("h3");
         if (startValue <= count && count < endValue) {
           // TODO: stamps
           td.innerText = days;
@@ -149,7 +146,8 @@ if (pathName.match(/objectives\/new/)) {
           // TODO:
           if (stampMapMap.has(stampName)) {
             if (stampMapMap.get(stampName).get("stampStatus")) {
-              pressStamp(td, stampMapMap.get(stampName).get("type"));
+              // pressStamp(td, stampMapMap.get(stampName).get("type"));
+              pressStamp(td, stampType);
             } else {
               removeStamp(td, day);
             }
@@ -200,14 +198,16 @@ if (pathName.match(/objectives\/new/)) {
         stampStatus = !stampMapMap.get(stampName).get("stampStatus");
         stampMapMap.get(stampName).set("stampStatus", stampStatus);
         if (stampStatus) {
-          pressStamp(elem, stampMapMap.get(stampName).get("type"));
+          // pressStamp(elem, stampMapMap.get(stampName).get("type"));
+          pressStamp(elem, stampType);
         } else {
           removeStamp(elem, day);
         }
       } else {
         stampStatus = !stampStatus;
         stampMapMap.set(stampName, initStampMap(stampStatus, objId));
-        pressStamp(elem, stampMapMap.get(stampName).get("type"));
+        // pressStamp(elem, stampMapMap.get(stampName).get("type"));
+        pressStamp(elem, stampType);
       }
       postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
         .then((data) => {

@@ -5,18 +5,27 @@ html
     meta(charset="utf-8")
     meta(http-equiv="X-UA-Compatible" content="IE=edge")
     meta(name="viewport" content="width=device-width, initial-scale=1")
-    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css", integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous")
+    link(rel="stylesheet", href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css", integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T", crossorigin="anonymous")
   body
-    nav.navbar.navbar-ligth.bg-light
-      div.navbar-header
-        a(href="/").navbar-brand.nav-link &#x2b55; スタンプカードくん
-      ul.navbar-nav
+    header
+      nav.navbar.navbar-light.bg-light
+        a(href="/").navbar-brand.nav-link
+          svg(width="36px" height="36px" viewbox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink")
+            g#Page-1(stroke="none" stroke-width="1" fill="none" fill-rule="evenodd")
+              g#stamp_card_logo
+                rect#Rectangle(fill="#5BC0DE" x="0" y="0" width="100" height="100" rx="8")
+                path#S(d="M19,63.4739618 L34.2214765,61.9973632 C35.1375885,67.0951694 36.9962108,70.839364 39.7973993,73.2300593 C42.5985878,75.6207546 46.377493,76.8160844 51.1342282,76.8160844 C56.172844,76.8160844 59.9693664,75.7525925 62.5239094,73.6255768 C65.0784524,71.4985611 66.3557047,69.0112206 66.3557047,66.1634806 C66.3557047,64.3353018 65.8183779,62.7796153 64.7437081,61.4963744 C63.6690383,60.2131336 61.7927986,59.0969065 59.1149329,58.1476599 C57.282709,57.5148287 53.1074151,56.3898125 46.5889262,54.7725775 C38.2029782,52.6982977 32.3188089,50.1494328 28.9362416,47.1259064 C24.1795064,42.871875 21.8011745,37.6862534 21.8011745,31.568886 C21.8011745,27.6312701 22.9198714,23.9485999 25.1572987,20.5207647 C27.394726,17.0929295 30.618687,14.4825403 34.8292785,12.6895188 C39.03987,10.8964973 44.1224534,10 50.0771812,10 C59.802062,10 67.1220392,12.1269838 72.0373322,16.3810152 C76.9526252,20.6350465 79.5335558,26.3128628 79.7802013,33.4146341 L64.135906,34.1001978 C63.4664396,30.1274247 62.0306318,27.2709382 59.8284396,25.5306526 C57.6262474,23.790367 54.3230086,22.9202373 49.9186242,22.9202373 C45.3732994,22.9202373 41.8146102,23.8518914 39.2424497,25.7152274 C37.5864011,26.9105751 36.7583893,28.5102075 36.7583893,30.5141727 C36.7583893,32.3423515 37.5335493,33.9068272 39.0838926,35.2076467 C41.0570568,36.860039 45.8489552,38.5827201 53.4597315,40.3757416 C61.0705079,42.1687631 66.6992267,44.023282 70.346057,45.939354 C73.9928874,47.855426 76.8468857,50.4746044 78.9081376,53.7969677 C80.9693895,57.119331 82,61.2238824 82,66.1107449 C82,70.5405627 80.7667909,74.68906 78.3003356,78.5563612 C75.8338803,82.4236625 72.3456601,85.2977274 67.8355705,87.1786421 C63.3254808,89.0595568 57.7055706,90 50.9756711,90 C41.1803202,90 33.6577444,87.7411784 28.4077181,83.2234674 C23.1576919,78.7057564 20.0218172,72.1226537 19,63.4739618 Z" fill="#FFFFFF" fill-rule="nonzero")
         if user
-          li.nav-item
-            a(href="/logout").nav-link #{user.username} をログアウト
-        else
-          li.nav-item
-            a(href="/login").nav-link ログイン
+          div.dropdown
+            a(href="#", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false", role="button").nav-link.dropdown-toggle#dropdown
+              img(src=user._json.avatar_url, width=30, height=30, alt="")
+            div(aria-labelledby="dropdownMenuButton").dropdown-menu.dropdown-menu-right
+              h6.dropdown-header #{user.username}
+              div.dropdown-divider
+              a(href="/logout").dropdown-item ログアウト
     div.container
       block content
+    footer.mt-5
+      div.text-center.py-4
+        small &copy; 2019 murashu
     script(src="/javascripts/bundle.js")

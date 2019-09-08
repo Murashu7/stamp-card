@@ -12,6 +12,11 @@ const Objective = loader.database.define('objectives', {
     type: Sequelize.STRING,
     allowNull: false
   },
+  stampType: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: "circle"
+  },
   dueDay: {
     type: Sequelize.DATE,
     allowNull: false

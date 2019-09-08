@@ -9,6 +9,7 @@ const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 const moment = require('moment-timezone');
 const aggregateStamps = require('./aggregateStamps');
+const stampTypeObj = require('./stamp-type');
 
 const colorLog = require('../utils/colorLog');
 
@@ -16,7 +17,7 @@ const { validationResult } = require("express-validator/check");
 const validators = require('./validators');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
-  res.render('new', { user: req.user });
+  res.render('new', { user: req.user, stampTypeObj: stampTypeObj });
 });
 
 router.post('/', authenticationEnsurer, validators, (req, res, next) => {
@@ -25,6 +26,8 @@ router.post('/', authenticationEnsurer, validators, (req, res, next) => {
     res.render('new', {
       user: req.user, 
       objectiveName: req.body.objectiveName,
+      stampType: req.body.stampType,
+      stampTypeObj: stampTypeObj,
       memo: req.body.memo,
       dueDay: req.body.dueDay,
       frequency: req.body.frequency,
@@ -37,6 +40,7 @@ router.post('/', authenticationEnsurer, validators, (req, res, next) => {
     Objective.create({
       objectiveId: objectiveId,
       objectiveName: req.body.objectiveName.slice(0, 255),
+      stampType: req.body.stampType,
       memo: req.body.memo,
       createdBy: req.user.id,
       createdAt: today,
@@ -98,7 +102,8 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective: storedObjective,
       month: storedMonth,
       today: new Date(),
-      stamps: stamps
+      stamps: stamps,
+      stampTypeObj: stampTypeObj
     });
   });
 });
@@ -116,9 +121,12 @@ router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
         user: req.user,
         objectiveId: objective.objectiveId,
         objectiveName: objective.objectiveName,
+        stampType: objective.stampType,
         frequency: objective.frequency,
         formattedDueDay: objective.formattedDueDay,
-        monthName: monthName
+        memo: objective.memo,
+        monthName: monthName,
+        stampTypeObj: stampTypeObj
       });
     } else {
       const err = new Error('指定された目標がない、または編集する権限がありません');
@@ -140,10 +148,12 @@ router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next)
       user: req.user, 
       objectiveId: req.params.objectiveId,
       objectiveName: req.body.objectiveName,
+      stampType: req.body.stampType,
       memo: req.body.memo,
       formattedDueDay: req.body.dueDay,
       frequency: req.body.frequency,
       monthName: req.query.month,
+      stampTypeObj: stampTypeObj,
       errors: errors.array()
     });
   } else {
@@ -156,6 +166,7 @@ router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next)
           objective.update({
             objectiveId: objective.objectiveId,
             objectiveName: req.body.objectiveName.slice(0, 255),
+            stampType: req.body.stampType,
             memo: req.body.memo,
             createdBy: req.user.id,
             updatedAt: updatedAt,

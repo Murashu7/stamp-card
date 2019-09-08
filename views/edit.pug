@@ -15,6 +15,15 @@ block content
       label(for="objectiveName") 目標名
       input(type="text" name="objectiveName" value=objectiveName).form-control
     div.form-group
+      lable(for="stampType") スタンプ
+      select(name="stampType").form-control
+        -for (const [key, value] of stampTypeObj.map) {
+          if key === stampType  
+            option(value=key selected)!= value
+          else
+            option(value=key)!= value
+        -}
+    div.form-group
       label(for="frequency") 頻度（週何回）
       select(name="frequency").form-control
         for val in [1, 2, 3, 4, 5, 6, 7]

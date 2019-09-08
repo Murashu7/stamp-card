@@ -1,23 +1,25 @@
 extends layout
 
 block content
-  h3.my-3 #{objective.objectiveName}
+  h3.my-3!= stampTypeObj.map.get(objective.stampType)
+    span  #{objective.objectiveName}
   p 今日までの達成率：
     span#freqAchvRate #{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
   p 期限日までの達成率：
     span#objAchvRate #{objective.objAchvRate_p} % #{objective.objAchvRate_f}
-  div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps)#calendar
-  table.table.table-borderless
-    tbody
-      tr
-        th 頻度（週に何回）
-        td #{objective.frequency}
-      tr
-        th 期限
-        td #{objective.formattedDueDay}
-      tr
-        th メモ
-        td(style="white-space:pre;") #{objective.memo}
+  div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps data-stamptype=objective.stampType)#calendar
+  div
+    table.table.table-bordered
+      tbody
+        tr
+          th(style="white-space:nowrap;") 目標回数（回/週）
+          td #{objective.frequency} 回
+        tr
+          th 期限
+          td #{objective.formattedDueDay} まで
+        tr
+          th メモ
+          td(style="white-space:pre-wrap;") #{objective.memo}
   - var isMine = parseInt(user.id) === objective.user.userId
   if isMine
     div 

@@ -123,8 +123,8 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
             request(app)
               .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
               .send({ stampStatus: true })
-              // テストを実行した日によって集計結果が変わってくる
-              .expect('{"status":"OK","stampStatus":true,"achvRate":{"freqAchvRate_p":25,"freqAchvRate_f":"( 1 ／ 4 )","objAchvRate_p":0,"objAchvRate_f":"( 1 ／ 1256 )"}}')
+              // テストを実行した日によって期限日までの週数は変わってくるので省略
+              .expect(/\{"status":"OK","stampStatus":true,"achvRate":{"freqAchvRate_p":25,"freqAchvRate_f":"\( 1 ／ 4 \)","objAchvRate_p":0,"objAchvRate_f":"\( 1 ／/)
               .end((err, res) => {
                 Stamp.findAll({
                   where: { objectiveId: objectiveId }

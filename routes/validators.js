@@ -9,6 +9,9 @@ const validators = [
     .escape()
     .not().isEmpty().withMessage("入力してください")
     .isLength({ max: 50 }).withMessage("50 文字以内で入力してください"),
+  check("stampType")
+    .escape()
+    .not().isEmpty().withMessage("スタンプを選択してください"),
   check("frequency")
     .escape()
     .not().isEmpty().withMessage("回数を選択してください [ 1 - 7 ]")

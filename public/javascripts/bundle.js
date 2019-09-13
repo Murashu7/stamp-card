@@ -166,9 +166,13 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   var objAchvRate = document.getElementById('objAchvRate'); // TODO: ここで必要なデータを取得する
   // Server → pug → JS
 
-  var calDate = new Date(cal.dataset.calmonth);
-  var today = new Date(cal.dataset.today);
-  var todayStr = "".concat(today.getFullYear(), "-").concat(today.getMonth() + 1, "-").concat(today.getDate());
+  var calDate = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.calmonth);
+  var today = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.today);
+  var createdAt = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.createdat);
+  var dueDay = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.dueday);
+  var todayStr = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(today).tz('Asia/Tokyo').format('YYYY-MM-DD');
+  var createdAtStr = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(createdAt).tz('Asia/Tokyo').format('YYYY-MM-DD');
+  var dueDayStr = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD');
   var objId = cal.dataset.objid;
   var stampStrs = cal.dataset.stamps;
   var stampType = cal.dataset.stamptype;
@@ -206,13 +210,13 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     var year = makeYear(calDate);
     var month = makeMonth(calDate);
     var day = makeDay(calDate);
-    var firstDay = new Date(calDate.setDate(1)); // その月の初日
+    var firstDay = calDate.set('date', 1); // その月の初日
 
-    var lastDay = new Date(year, month, 0); // その月の末日
+    var lastDay = calDate.endOf('month'); // その月の末日
 
-    var startValue = firstDay.getDay(); // カレンダーの開始値( 0 - 6 )
+    var startValue = firstDay.day(); // カレンダーの開始値( 0 - 6 )
 
-    var endValue = startValue + lastDay.getDate(); // カレンダーの終了値
+    var endValue = startValue + lastDay.date(); // カレンダーの終了値
 
     var table = document.createElement("table");
     var tHead = document.createElement("thead");
@@ -221,10 +225,11 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     var h5 = document.createElement("h5");
     var tableTitle_btns = document.createElement("div");
     var tableBtns = document.createElement("div");
-    h5.innerText = "".concat(year, "\u5E74").concat(month, "\u6708"); // bootstrap 用 class
+    h5.innerText = "".concat(year, "\u5E74").concat(month, "\u6708"); // スタイル適用( bootstrap )
 
     table.classList.add("table");
     table.classList.add("table-bordered");
+    table.style.tableLayout = "fixed";
     tableTitle_btns.classList.add("d-flex");
     tableTitle_btns.classList.add("justify-content-between");
     tableTitle_btns.classList.add("mt-5");
@@ -267,34 +272,74 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
       var _tr = document.createElement("tr");
 
       for (var j = 0, _len = week.length; j < _len; j++) {
+        // td の作成
         var td = document.createElement("td");
-        td.classList.add("text-center");
-        td.classList.add("p-1");
-        td.classList.add("h3");
+        var tdHeader = document.createElement("div");
+        var divDay = document.createElement("div");
+        var divLabel = document.createElement("div");
+        var tdBody = document.createElement("div"); // 日( 0 ), 土( 6 ) の日付に色付け
+
+        if (j === 0) {
+          divDay.classList.add("text-danger");
+        } else if (j === 6) {
+          divDay.classList.add("text-primary");
+        } // td のスタイル
+
+
+        td.classList.add("p-0", "position-relative");
+        td.style.height = "65px";
+        tdHeader.classList.add("p-0");
+        divDay.classList.add("px-1");
+        tdBody.classList.add("h2", "text-center", "mb-0", "position-absolute", "w-100");
+        tdBody.style.bottom = "0";
 
         if (startValue <= count && count < endValue) {
           // TODO: stamps
-          td.innerText = days;
+          divDay.innerText = days;
           td.setAttribute('data-day', days);
-          var tdDate = "".concat(year, "-").concat(month, "-").concat(td.dataset.day);
           var _day = td.dataset.day;
-          var stampName = _day; // 当日の td に背景色をつける
+          var tdDate = calDate.set('date', _day).tz('Asia/Tokyo').format('YYYY-MM-DD');
+          var stampName = _day;
 
           if (todayStr === tdDate) {
+            // 今日の td に色付け
             td.style.backgroundColor = 'skyblue';
+          } else if (createdAtStr === tdDate || dueDayStr === tdDate) {
+            // 開始日か期限日にラベルをつける
+            tdHeader.classList.add("d-flex");
+            divLabel.classList.add("flex-grow-1", "bg-success", "font-weight-bold", "text-white", "small", "text-center", "rounded");
+            divLabel.style.lineHeight = "24px";
+
+            if (createdAtStr === tdDate) {
+              // 開始日
+              divLabel.innerText = 'スタート';
+            } else {
+              // 期限日
+              divLabel.innerText = 'ゴール';
+            }
           } // TODO:
 
 
           if (stampMapMap.has(stampName)) {
             if (stampMapMap.get(stampName).get("stampStatus")) {
-              // pressStamp(td, stampMapMap.get(stampName).get("type"));
-              pressStamp(td, stampType);
+              pressStamp(tdBody, stampType);
             } else {
-              removeStamp(td, _day);
+              removeStamp(tdBody);
             }
           }
 
-          addStampEventListener(td, calDate, stampMapMap, objId);
+          tdHeader.appendChild(divDay);
+          tdHeader.appendChild(divLabel);
+          td.appendChild(tdHeader);
+          td.appendChild(tdBody); // 開始日から期限までの間でスタンプが押せる
+
+          var tdDateUnix = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(tdDate).unix();
+          var createdAtUnix = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(createdAtStr).unix();
+          var dueDayUnix = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(dueDayStr).unix();
+
+          if (createdAtUnix <= tdDateUnix && tdDateUnix <= dueDayUnix) {
+            addStampEventListener(td, tdBody, calDate, stampMapMap, objId);
+          }
 
           _tr.appendChild(td);
 
@@ -308,7 +353,8 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
       tBody.appendChild(_tr);
     }
-  };
+  }; // TODO: stamp の属性見直し(status, type, color 不要)
+
 
   var initStampMap = function initStampMap(stampStatus, objId) {
     var stampMap = new Map();
@@ -322,20 +368,18 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
   var pressStamp = function pressStamp(elem, type) {
     if (stampTypeObj.map.has(type)) {
-      elem.innerText = '';
       elem.innerHTML = stampTypeObj.map.get(type);
     }
   };
 
-  var removeStamp = function removeStamp(elem, str) {
+  var removeStamp = function removeStamp(elem) {
     elem.innerHTML = '';
-    elem.innerText = str;
   };
 
-  var addStampEventListener = function addStampEventListener(elem, date, stampMapMap, objId) {
-    elem.addEventListener('click', function (e) {
+  var addStampEventListener = function addStampEventListener(elem1, elem2, date, stampMapMap, objId) {
+    elem1.addEventListener('click', function (e) {
       // TODO: 
-      var day = elem.dataset.day;
+      var day = elem1.dataset.day;
       var stampName = day;
       var tdDate = "".concat(makeYear(date), "-").concat(makeMonth(date), "-").concat(day);
       var monthName = makeMonthName(date);
@@ -346,22 +390,19 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
         stampMapMap.get(stampName).set("stampStatus", stampStatus);
 
         if (stampStatus) {
-          // pressStamp(elem, stampMapMap.get(stampName).get("type"));
-          pressStamp(elem, stampType);
+          pressStamp(elem2, stampType);
         } else {
-          removeStamp(elem, day);
+          removeStamp(elem2);
         }
       } else {
         stampStatus = !stampStatus;
-        stampMapMap.set(stampName, initStampMap(stampStatus, objId)); // pressStamp(elem, stampMapMap.get(stampName).get("type"));
-
-        pressStamp(elem, stampType);
+        stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+        pressStamp(elem2, stampType);
       }
 
       postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
         stampStatus: stampStatus
       }).then(function (data) {
-        // console.log(typeof JSON.stringify(data)); // JSON-string from `response.json()` call
         var freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
         var freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
         var objAchvRate_p = data["achvRate"]["objAchvRate_p"];
@@ -375,25 +416,23 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   };
 
   var makeYear = function makeYear(date) {
-    return date.getFullYear();
+    return date.year();
   };
 
   var makeMonth = function makeMonth(date) {
-    return date.getMonth() + 1;
+    return date.month() + 1;
   };
 
   var makeDay = function makeDay(date) {
-    return date.getDate();
+    return date.date();
   };
 
   var makePrevMonth = function makePrevMonth(date) {
-    return new Date(date.setDate(0)); // 先月末日
+    return date.add(-1, 'M'); // 先月
   };
 
   var makeNextMonth = function makeNextMonth(date) {
-    var lastDay = new Date(makeYear(date), makeMonth(date), 0).getDate(); // その月の末日
-
-    return new Date(date.setDate(lastDay + 1)); // 次月の初日
+    return date.add(1, 'M'); // 来月
   };
 
   var makeMonthName = function makeMonthName(date) {

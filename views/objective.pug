@@ -7,7 +7,7 @@ block content
     span#freqAchvRate #{objective.freqAchvRate_p} % #{objective.freqAchvRate_f}
   p 期限日までの達成率：
     span#objAchvRate #{objective.objAchvRate_p} % #{objective.objAchvRate_f}
-  div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-stamps=stamps data-stamptype=objective.stampType)#calendar
+  div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-createdat=objective.createdAt data-dueday=objective.dueDay data-stamps=stamps data-stamptype=objective.stampType)#calendar
   div
     table.table.table-bordered
       tbody

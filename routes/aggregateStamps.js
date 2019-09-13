@@ -1,4 +1,5 @@
 'use strict'
+
 const Stamp = require('../models/stamp');
 const moment = require('moment-timezone');
 const loader = require('../models/sequelize-loader');
@@ -20,7 +21,6 @@ const aggregateStamps = function(objective, today) {
   }).map((day) => {
     return moment(day).date();
   });
-  colorLog.color('blue', result);
 
   return Stamp.findOne({
     where: { 
@@ -41,7 +41,6 @@ const aggregateStamps = function(objective, today) {
     });
   })
 }
-
 
 const getDailyArray = (month) => {
   const start = moment(month).startOf('month');

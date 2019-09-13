@@ -35,7 +35,7 @@ router.post('/', authenticationEnsurer, validators, (req, res, next) => {
     });
   } else {
     const objectiveId = uuid.v4();
-    const today = new Date();
+    const today = moment(moment().tz('Asia/Tokyo').format('YYYY-MM-DD'));
 
     Objective.create({
       objectiveId: objectiveId,
@@ -45,7 +45,7 @@ router.post('/', authenticationEnsurer, validators, (req, res, next) => {
       createdBy: req.user.id,
       createdAt: today,
       updatedAt: today,
-      dueDay: new Date(req.body.dueDay),
+      dueDay: moment(req.body.dueDay),
       frequency: req.body.frequency
     }).then((objective) => {
       return Month.create({
@@ -78,7 +78,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
       // 頻度と目標の達成率
-      return aggregateStamps(objective, moment(new Date())).then((objective) => {
+      return aggregateStamps(objective, moment()).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
           order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
@@ -101,7 +101,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       user: req.user,
       objective: storedObjective,
       month: storedMonth,
-      today: new Date(),
+      today: moment(),
       stamps: stamps,
       stampTypeObj: stampTypeObj
     });
@@ -141,7 +141,7 @@ const isMine = function(req, objective) {
 }
 
 router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next) => {
-  const today = new Date();
+  const today = moment();
   const errors = validationResult(req);
   if (!errors.isEmpty() && parseInt(req.query.edit) === 1) {
     res.render('edit', {
@@ -170,7 +170,7 @@ router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next)
             memo: req.body.memo,
             createdBy: req.user.id,
             updatedAt: updatedAt,
-            dueDay: new Date(req.body.dueDay),
+            dueDay: moment(req.body.dueDay),
             frequency: req.body.frequency
           }).then((objective) => {
             const monthName = req.query.month || parseMonthName(today);

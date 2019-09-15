@@ -22,6 +22,14 @@ const aggregateStamps = function(objective, today) {
     return moment(day).date();
   });
 
+  const d = moment('2019-09-05').tz('Asia/Tokyo');
+  colorLog.color('red', d);
+  colorLog.color('blue', getDatebeginningWeek(d));
+  colorLog.color('yellow', getDateWeekend(d));
+  colorLog.color('green', getStartRange(d));
+  colorLog.color('black', getEndRange(d));
+  colorLog.color('magenta', getCurrentRange(d));
+
   return Stamp.findOne({
     where: { 
       objectiveId: objective.objectiveId,
@@ -40,6 +48,46 @@ const aggregateStamps = function(objective, today) {
        resolve(objective);
     });
   })
+}
+
+// TODO: 
+function getDatebeginningWeek(date) {
+  const cloneDate = date.clone();
+  const dayOfWeek = date.day();
+  const diff = 0 - dayOfWeek;
+  const dateBeginningWeek = cloneDate.add('day', diff);
+  return dateBeginningWeek;
+}
+
+function getDateWeekend(date){
+  const cloneDate = date.clone();
+  const dayOfWeek = date.day();
+  const diff = 6 - dayOfWeek;
+  const dateWeekend = cloneDate.add('day', diff);
+  return dateWeekend;
+}
+
+function getStartRange(startDate) {
+  const results = [];
+  results.push(startDate);
+  const dateWeekend = getDateWeekend(startDate); 
+  results.push(dateWeekend);
+  return results;
+}
+
+function getEndRange(endDate) {
+  const cloneDate = endDate.clone();
+  const results = [];
+  results.push(getDatebeginningWeek(cloneDate));
+  results.push(endDate);
+  return results;
+}
+
+function getCurrentRange(today) {
+  const results = [];
+  results.push(getDatebeginningWeek(today));
+  results.push(getDateWeekend(today));
+  return results;
 }
 
 const getDailyArray = (month) => {

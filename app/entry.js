@@ -37,7 +37,6 @@ if (pathName.match(/objectives\/new/)) {
   const freqAchvRate = document.getElementById('freqAchvRate');
   const objAchvRate = document.getElementById('objAchvRate');
 
-  // TODO: ここで必要なデータを取得する
   // Server → pug → JS
   const calDate = moment(cal.dataset.calmonth);
   const today = moment(cal.dataset.today);
@@ -69,15 +68,11 @@ if (pathName.match(/objectives\/new/)) {
   }
 
   let stampMapMap = setupStampMapMap(stampStrs);
-  console.log(stampMapMap);
 
   const displayCal = function(calDate) {
-    const year = makeYear(calDate); 
-    const month = makeMonth(calDate);
-    const day = makeDay(calDate);
-    const firstDay = calDate.set('date', 1); // その月の初日
-    const lastDay = calDate.endOf('month'); // その月の末日
+    const firstDay = calDate.startOf('month'); // その月の初日
     const startValue = firstDay.day(); // カレンダーの開始値( 0 - 6 )
+    const lastDay = calDate.endOf('month'); // その月の末日
     const endValue = startValue + lastDay.date(); // カレンダーの終了値
 
     const table = document.createElement("table");
@@ -88,7 +83,8 @@ if (pathName.match(/objectives\/new/)) {
     const tableTitle_btns = document.createElement("div");
     const tableBtns = document.createElement("div");
     
-    h5.innerText = `${year}年${month}月`;
+    h5.innerText = moment(calDate).tz('Asia/Tokyo').format('YYYY年MM月');
+
     // スタイル適用( bootstrap )
     table.classList.add("table");
     table.classList.add("table-bordered");
@@ -165,14 +161,16 @@ if (pathName.match(/objectives\/new/)) {
 
           if (todayStr === tdDate) { // 今日の td に色付け
              td.style.backgroundColor = 'skyblue'; 
-          } else if (createdAtStr === tdDate || dueDayStr === tdDate) { // 開始日か期限日にラベルをつける
+          } 
+          
+          if (createdAtStr === tdDate || dueDayStr === tdDate) { // 開始日か期限日にラベルをつける
              tdHeader.classList.add("d-flex");
              divLabel.classList.add("flex-grow-1", "bg-success", "font-weight-bold", "text-white", "small", "text-center", "rounded");
              divLabel.style.lineHeight = "24px";
              if (createdAtStr === tdDate) { // 開始日
-               divLabel.innerText = 'スタート'; 
+               divLabel.innerText = '開始'; 
              } else { // 期限日
-               divLabel.innerText = 'ゴール'; 
+               divLabel.innerText = '終了'; 
              }
           } 
 
@@ -232,8 +230,8 @@ if (pathName.match(/objectives\/new/)) {
       // TODO: 
       const day = elem1.dataset.day;
       const stampName = day;
-      const tdDate = `${makeYear(date)}-${makeMonth(date)}-${day}`;
-      const monthName = makeMonthName(date);
+      const tdDate = `${date.year()}-${date.month + 1}-${day}`;
+      const monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       let stampStatus = false;
 
       if (stampMapMap.has(stampName)) {
@@ -280,18 +278,6 @@ if (pathName.match(/objectives\/new/)) {
     .then(response => response.json()); // レスポンスの JSON を解析
   }
 
-  const makeYear = function(date) {
-    return date.year();
-  }
-
-  const makeMonth = function(date) {
-    return date.month() + 1;
-  }
-
-  const makeDay = function(date) {
-    return date.date();
-  }
-
   const makePrevMonth = function(date) {
     return date.add(-1, 'M'); // 先月
   }
@@ -299,10 +285,6 @@ if (pathName.match(/objectives\/new/)) {
   const makeNextMonth = function(date) {
     return date.add(1, 'M'); // 来月
   }
-
-  const makeMonthName = function(date) {
-    return  moment(date).tz('Asia/Tokyo').format('YYYY-MM');
-  } 
 
   const submitForm = function(objId, monthName) {
     const form = document.createElement('form');
@@ -314,13 +296,13 @@ if (pathName.match(/objectives\/new/)) {
 
   prev.addEventListener('click', function(e) {
     const prevMonth = makePrevMonth(calDate);
-    const monthName = makeMonthName(prevMonth);
+    const monthName = prevMonth.tz('Asia/Tokyo').format('YYYY-MM');
     submitForm(objId, monthName);
   }, false);
 
   next.addEventListener('click', function(e) {
     const nextMonth = makeNextMonth(calDate);
-    const monthName = makeMonthName(nextMonth);
+    const monthName = nextMonth.tz('Asia/Tokyo').format('YYYY-MM');
     submitForm(objId, monthName);
   }, false);
 

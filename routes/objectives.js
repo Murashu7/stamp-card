@@ -76,6 +76,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
     if (objective) {
       storedObjective = objective;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
+      objective.formattedCreatedAt = moment(objective.createdAt).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
       // 頻度と目標の達成率
       return aggregateStamps(objective, moment()).then((objective) => {

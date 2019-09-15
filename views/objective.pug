@@ -12,6 +12,9 @@ block content
     table.table.table-bordered
       tbody
         tr
+          th 開始日
+          td #{objective.formattedCreatedAt} から
+        tr
           th(style="white-space:nowrap;") 目標回数（回/週）
           td #{objective.frequency} 回
         tr

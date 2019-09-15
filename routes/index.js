@@ -10,7 +10,7 @@ const colorLog = require('../utils/colorLog.js');
 const loader = require('../models/sequelize-loader');
 const sequelize = loader.database;
 const aggregateStamps = require('./aggregateStamps');
-
+const stampTypeObj = require('./stamp-type');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -38,7 +38,8 @@ router.get('/', function(req, res, next) {
         title: title,
         user: req.user,
         objectives: objectives,
-        monthName: monthName
+        monthName: monthName,
+        stampTypeObj: stampTypeObj
       });
     });
   } else {

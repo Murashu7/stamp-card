@@ -204,17 +204,13 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   };
 
   var stampMapMap = setupStampMapMap(stampStrs);
-  console.log(stampMapMap);
 
   var displayCal = function displayCal(calDate) {
-    var year = makeYear(calDate);
-    var month = makeMonth(calDate);
-    var day = makeDay(calDate);
-    var firstDay = calDate.set('date', 1); // その月の初日
-
-    var lastDay = calDate.endOf('month'); // その月の末日
+    var firstDay = calDate.startOf('month'); // その月の初日
 
     var startValue = firstDay.day(); // カレンダーの開始値( 0 - 6 )
+
+    var lastDay = calDate.endOf('month'); // その月の末日
 
     var endValue = startValue + lastDay.date(); // カレンダーの終了値
 
@@ -225,7 +221,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     var h5 = document.createElement("h5");
     var tableTitle_btns = document.createElement("div");
     var tableBtns = document.createElement("div");
-    h5.innerText = "".concat(year, "\u5E74").concat(month, "\u6708"); // スタイル適用( bootstrap )
+    h5.innerText = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(calDate).tz('Asia/Tokyo').format('YYYY年MM月'); // スタイル適用( bootstrap )
 
     table.classList.add("table");
     table.classList.add("table-bordered");
@@ -297,14 +293,16 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
           // TODO: stamps
           divDay.innerText = days;
           td.setAttribute('data-day', days);
-          var _day = td.dataset.day;
-          var tdDate = calDate.set('date', _day).tz('Asia/Tokyo').format('YYYY-MM-DD');
-          var stampName = _day;
+          var day = td.dataset.day;
+          var tdDate = calDate.set('date', day).tz('Asia/Tokyo').format('YYYY-MM-DD');
+          var stampName = day;
 
           if (todayStr === tdDate) {
             // 今日の td に色付け
             td.style.backgroundColor = 'skyblue';
-          } else if (createdAtStr === tdDate || dueDayStr === tdDate) {
+          }
+
+          if (createdAtStr === tdDate || dueDayStr === tdDate) {
             // 開始日か期限日にラベルをつける
             tdHeader.classList.add("d-flex");
             divLabel.classList.add("flex-grow-1", "bg-success", "font-weight-bold", "text-white", "small", "text-center", "rounded");
@@ -312,10 +310,10 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
             if (createdAtStr === tdDate) {
               // 開始日
-              divLabel.innerText = 'スタート';
+              divLabel.innerText = '開始';
             } else {
               // 期限日
-              divLabel.innerText = 'ゴール';
+              divLabel.innerText = '終了';
             }
           } // TODO:
 
@@ -381,8 +379,8 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
       // TODO: 
       var day = elem1.dataset.day;
       var stampName = day;
-      var tdDate = "".concat(makeYear(date), "-").concat(makeMonth(date), "-").concat(day);
-      var monthName = makeMonthName(date);
+      var tdDate = "".concat(date.year(), "-").concat(date.month + 1, "-").concat(day);
+      var monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       var stampStatus = false;
 
       if (stampMapMap.has(stampName)) {
@@ -415,28 +413,12 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     }, false);
   };
 
-  var makeYear = function makeYear(date) {
-    return date.year();
-  };
-
-  var makeMonth = function makeMonth(date) {
-    return date.month() + 1;
-  };
-
-  var makeDay = function makeDay(date) {
-    return date.date();
-  };
-
   var makePrevMonth = function makePrevMonth(date) {
     return date.add(-1, 'M'); // 先月
   };
 
   var makeNextMonth = function makeNextMonth(date) {
     return date.add(1, 'M'); // 来月
-  };
-
-  var makeMonthName = function makeMonthName(date) {
-    return moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(date).tz('Asia/Tokyo').format('YYYY-MM');
   };
 
   var submitForm = function submitForm(objId, monthName) {
@@ -449,12 +431,12 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
   prev.addEventListener('click', function (e) {
     var prevMonth = makePrevMonth(calDate);
-    var monthName = makeMonthName(prevMonth);
+    var monthName = prevMonth.tz('Asia/Tokyo').format('YYYY-MM');
     submitForm(objId, monthName);
   }, false);
   next.addEventListener('click', function (e) {
     var nextMonth = makeNextMonth(calDate);
-    var monthName = makeMonthName(nextMonth);
+    var monthName = nextMonth.tz('Asia/Tokyo').format('YYYY-MM');
     submitForm(objId, monthName);
   }, false);
   displayCal(calDate);

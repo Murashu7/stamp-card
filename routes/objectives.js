@@ -1,4 +1,5 @@
 'use strict'
+
 const express = require('express')
 const router = express.Router();
 const authenticationEnsurer = require('./authentication-ensurer');
@@ -35,7 +36,7 @@ router.post('/', authenticationEnsurer, validators, (req, res, next) => {
     });
   } else {
     const objectiveId = uuid.v4();
-    const today = moment(moment().tz('Asia/Tokyo').format('YYYY-MM-DD'));
+    const today = moment().startOf('date');
 
     Objective.create({
       objectiveId: objectiveId,
@@ -79,7 +80,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.formattedCreatedAt = moment(objective.createdAt).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
       // 頻度と目標の達成率
-      return aggregateStamps(objective, moment()).then((objective) => {
+      return aggregateStamps(objective, moment().startOf('date')).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
           order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
@@ -109,7 +110,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       user: req.user,
       objective: storedObjective,
       month: storedMonth,
-      today: moment(),
+      today: moment().startOf('date'),
       stamps: stampsData,
       stampTypeObj: stampTypeObj
     });
@@ -149,7 +150,7 @@ const isMine = function(req, objective) {
 }
 
 router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next) => {
-  const today = moment();
+  const today = moment().startOf('date');
   const errors = validationResult(req);
   if (!errors.isEmpty() && parseInt(req.query.edit) === 1) {
     res.render('edit', {

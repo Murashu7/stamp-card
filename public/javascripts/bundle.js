@@ -154,8 +154,9 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   next.id = "next";
   prev.innerText = "前の月";
   next.innerText = "次の月";
-  var freqAchvRate = document.getElementById('freqAchvRate');
-  var objAchvRate = document.getElementById('objAchvRate'); // Server → pug → JS
+  var achievedNum = document.getElementById('achievedNum');
+  var objAchvRate = document.getElementById('objAchvRate');
+  var remainingDays = document.getElementById('remainingDays'); // Server → pug → JS
 
   var calDate = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.calmonth);
   var today = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.today);
@@ -378,12 +379,12 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
       postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
         stampStatus: stampStatus
       }).then(function (data) {
-        var freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
-        var freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
-        var objAchvRate_p = data["achvRate"]["objAchvRate_p"];
-        var objAchvRate_f = data["achvRate"]["objAchvRate_f"];
-        freqAchvRate.innerText = "".concat(freqAchvRate_p, " % ").concat(freqAchvRate_f);
-        objAchvRate.innerText = "".concat(objAchvRate_p, " % ").concat(objAchvRate_f);
+        var num = data["aggregate"]["achievedNum"];
+        var rate = data["aggregate"]["objAchvRate"];
+        var days = data["aggregate"]["remainingDays"];
+        achievedNum.innerText = "".concat(num);
+        objAchvRate.innerText = "".concat(rate);
+        remainingDays.innerText = "".concat(days);
       }).catch(function (error) {
         return console.error(error);
       });

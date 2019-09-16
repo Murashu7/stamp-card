@@ -34,8 +34,9 @@ if (pathName.match(/objectives\/new/)) {
   prev.innerText = "前の月";
   next.innerText = "次の月";
 
-  const freqAchvRate = document.getElementById('freqAchvRate');
+  const achievedNum = document.getElementById('achievedNum');
   const objAchvRate = document.getElementById('objAchvRate');
+  const remainingDays = document.getElementById('remainingDays');
 
   // Server → pug → JS
   const calDate = moment(cal.dataset.calmonth);
@@ -241,12 +242,12 @@ if (pathName.match(/objectives\/new/)) {
       }
       postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
         .then((data) => {
-          const freqAchvRate_p = data["achvRate"]["freqAchvRate_p"];
-          const freqAchvRate_f = data["achvRate"]["freqAchvRate_f"];
-          const objAchvRate_p = data["achvRate"]["objAchvRate_p"];
-          const objAchvRate_f = data["achvRate"]["objAchvRate_f"];
-          freqAchvRate.innerText = `${freqAchvRate_p} % ${freqAchvRate_f}`;
-          objAchvRate.innerText = `${objAchvRate_p} % ${objAchvRate_f}`;
+          const num = data["aggregate"]["achievedNum"];
+          const rate = data["aggregate"]["objAchvRate"];
+          const days = data["aggregate"]["remainingDays"];
+          achievedNum.innerText = `${num}`;
+          objAchvRate.innerText = `${rate}`;
+          remainingDays.innerText = `${days}`;
         })
         .catch(error => console.error(error));
     }, false);

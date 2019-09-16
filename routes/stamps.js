@@ -40,18 +40,17 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationE
     return Objective.findOne({
       where: { objectiveId: objectiveId }
     }).then((objective) => {
-      return aggregateStamps(objective, moment(new Date()));
+      return aggregateStamps(objective, moment());
     });
   }).then((objective) => {
     res.json({ 
       status: 'OK', 
       stampStatus: stampStatus, 
-      achvRate: {
-        freqAchvRate_p: objective.freqAchvRate_p,
-        freqAchvRate_f: objective.freqAchvRate_f,
-        objAchvRate_p: objective.objAchvRate_p,
-        objAchvRate_f: objective.objAchvRate_f
-       }
+      aggregate: {
+        achievedNum: objective.achievedNum, // 今日までの達成数
+        objAchvRate: objective.objAchvRate, // 今日まで達成率(%)
+        remainingDays: objective.remainingDays // 期限日までの残日数
+      }
     });
   });
 });

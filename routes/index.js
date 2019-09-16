@@ -16,7 +16,7 @@ const stampTypeObj = require('./stamp-type');
 router.get('/', function(req, res, next) {
   const title = "スタンプカードくん";
   let storedObjectives = null;
-  const today = moment(new Date);
+  const today = moment().startOf('date');
   const monthName = moment(today).tz('Asia/Tokyo').format('YYYY-MM');
 
   if (req.user) {

@@ -98,12 +98,19 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       order: [['"stampName"', 'ASC']]
     });
   }).then((stamps) => {
+    const stampsData = stamps.map((s) => {
+      const tmpObj = {};
+      tmpObj['stampName'] = s.stampName;
+      tmpObj['stampStatus'] = s.stampStatus;
+      return tmpObj;
+    });
+    
     res.render('objective', {
       user: req.user,
       objective: storedObjective,
       month: storedMonth,
       today: moment(),
-      stamps: stamps,
+      stamps: stampsData,
       stampTypeObj: stampTypeObj
     });
   });

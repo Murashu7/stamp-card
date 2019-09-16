@@ -49,25 +49,19 @@ if (pathName.match(/objectives\/new/)) {
   const stampStrs = cal.dataset.stamps;
   const stampType = cal.dataset.stamptype;
 
-  const setupStampMapMap = function(stampStrs) {
-    let stampMapMap = new Map();
+  const setupStampMap = function(stampStrs) {
+    let stampMap = new Map();
     let tmp = stampStrs.match(/\{[^\{\}]+\}/g);
     if (tmp) {
       tmp.forEach((t) => {
         let json = JSON.parse(t);
-        let stampMap = new Map();
-        for (let [key, value] of Object.entries(json)) {
-          if (key !== 'stampName') {
-            stampMap.set(key, value);
-          }
-        }
-        stampMapMap.set(json.stampName, stampMap);
+        stampMap.set(json.stampName, json.stampStatus);
       });
     }
-    return stampMapMap;
+    return stampMap;
   }
 
-  let stampMapMap = setupStampMapMap(stampStrs);
+  let stampMap = setupStampMap(stampStrs);
 
   const displayCal = function(calDate) {
     const firstDay = calDate.startOf('month'); // その月の初日
@@ -175,8 +169,9 @@ if (pathName.match(/objectives\/new/)) {
           } 
 
           // TODO:
-          if (stampMapMap.has(stampName)) {
-            if (stampMapMap.get(stampName).get("stampStatus")) {
+          if (stampMap.has(stampName)) {
+            // if (stampMapMap.get(stampName).get("stampStatus")) {
+            if (stampMap.get(stampName)) {
               pressStamp(tdBody, stampType);
             } else {
               removeStamp(tdBody);
@@ -192,7 +187,7 @@ if (pathName.match(/objectives\/new/)) {
           const createdAtUnix = moment(createdAtStr).unix();
           const dueDayUnix = moment(dueDayStr).unix();
           if (createdAtUnix <= tdDateUnix && tdDateUnix <= dueDayUnix) {
-            addStampEventListener(td, tdBody, calDate, stampMapMap, objId);
+            addStampEventListener(td, tdBody, calDate, stampMap, objId);
           }
           tr.appendChild(td)  
           days++;
@@ -207,10 +202,7 @@ if (pathName.match(/objectives\/new/)) {
   // TODO: stamp の属性見直し(status, type, color 不要)
   const initStampMap = function(stampStatus, objId) {
     let stampMap = new Map();
-    const defaultStampType = stampTypeObj.defaultType();
     stampMap.set("stampStatus", stampStatus);
-    stampMap.set("type", defaultStampType);
-    stampMap.set("color", 0);
     stampMap.set("objectiveId", objId);
     return stampMap;
   }
@@ -225,7 +217,7 @@ if (pathName.match(/objectives\/new/)) {
     elem.innerHTML = '';
   }
 
-  const addStampEventListener = function(elem1, elem2, date, stampMapMap, objId) {
+  const addStampEventListener = function(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function(e) {
       // TODO: 
       const day = elem1.dataset.day;
@@ -234,9 +226,9 @@ if (pathName.match(/objectives\/new/)) {
       const monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       let stampStatus = false;
 
-      if (stampMapMap.has(stampName)) {
-        stampStatus = !stampMapMap.get(stampName).get("stampStatus");
-        stampMapMap.get(stampName).set("stampStatus", stampStatus);
+      if (stampMap.has(stampName)) {
+        stampStatus = !stampMap.get(stampName);
+        stampMap.set(stampName, stampStatus);
         if (stampStatus) {
           pressStamp(elem2, stampType);
         } else {
@@ -244,7 +236,7 @@ if (pathName.match(/objectives\/new/)) {
         }
       } else {
         stampStatus = !stampStatus;
-        stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+        stampMap.set(stampName, stampStatus);
         pressStamp(elem2, stampType);
       }
       postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })

@@ -98,14 +98,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var bootstrap__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(bootstrap__WEBPACK_IMPORTED_MODULE_2__);
 
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
 var stampTypeObj = __webpack_require__(1);
 
 
@@ -163,8 +155,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   prev.innerText = "前の月";
   next.innerText = "次の月";
   var freqAchvRate = document.getElementById('freqAchvRate');
-  var objAchvRate = document.getElementById('objAchvRate'); // TODO: ここで必要なデータを取得する
-  // Server → pug → JS
+  var objAchvRate = document.getElementById('objAchvRate'); // Server → pug → JS
 
   var calDate = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.calmonth);
   var today = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.today);
@@ -177,33 +168,21 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   var stampStrs = cal.dataset.stamps;
   var stampType = cal.dataset.stamptype;
 
-  var setupStampMapMap = function setupStampMapMap(stampStrs) {
-    var stampMapMap = new Map();
+  var setupStampMap = function setupStampMap(stampStrs) {
+    var stampMap = new Map();
     var tmp = stampStrs.match(/\{[^\{\}]+\}/g);
 
     if (tmp) {
       tmp.forEach(function (t) {
         var json = JSON.parse(t);
-        var stampMap = new Map();
-
-        for (var _i = 0, _Object$entries = Object.entries(json); _i < _Object$entries.length; _i++) {
-          var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
-              key = _Object$entries$_i[0],
-              value = _Object$entries$_i[1];
-
-          if (key !== 'stampName') {
-            stampMap.set(key, value);
-          }
-        }
-
-        stampMapMap.set(json.stampName, stampMap);
+        stampMap.set(json.stampName, json.stampStatus);
       });
     }
 
-    return stampMapMap;
+    return stampMap;
   };
 
-  var stampMapMap = setupStampMapMap(stampStrs);
+  var stampMap = setupStampMap(stampStrs);
 
   var displayCal = function displayCal(calDate) {
     var firstDay = calDate.startOf('month'); // その月の初日
@@ -264,7 +243,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     var count = 0;
     var days = 1;
 
-    for (var _i2 = 0; _i2 < 6; _i2++) {
+    for (var _i = 0; _i < 6; _i++) {
       var _tr = document.createElement("tr");
 
       for (var j = 0, _len = week.length; j < _len; j++) {
@@ -318,8 +297,9 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
           } // TODO:
 
 
-          if (stampMapMap.has(stampName)) {
-            if (stampMapMap.get(stampName).get("stampStatus")) {
+          if (stampMap.has(stampName)) {
+            // if (stampMapMap.get(stampName).get("stampStatus")) {
+            if (stampMap.get(stampName)) {
               pressStamp(tdBody, stampType);
             } else {
               removeStamp(tdBody);
@@ -336,7 +316,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
           var dueDayUnix = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(dueDayStr).unix();
 
           if (createdAtUnix <= tdDateUnix && tdDateUnix <= dueDayUnix) {
-            addStampEventListener(td, tdBody, calDate, stampMapMap, objId);
+            addStampEventListener(td, tdBody, calDate, stampMap, objId);
           }
 
           _tr.appendChild(td);
@@ -356,10 +336,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
   var initStampMap = function initStampMap(stampStatus, objId) {
     var stampMap = new Map();
-    var defaultStampType = stampTypeObj.defaultType();
     stampMap.set("stampStatus", stampStatus);
-    stampMap.set("type", defaultStampType);
-    stampMap.set("color", 0);
     stampMap.set("objectiveId", objId);
     return stampMap;
   };
@@ -374,7 +351,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     elem.innerHTML = '';
   };
 
-  var addStampEventListener = function addStampEventListener(elem1, elem2, date, stampMapMap, objId) {
+  var addStampEventListener = function addStampEventListener(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function (e) {
       // TODO: 
       var day = elem1.dataset.day;
@@ -383,9 +360,9 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
       var monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       var stampStatus = false;
 
-      if (stampMapMap.has(stampName)) {
-        stampStatus = !stampMapMap.get(stampName).get("stampStatus");
-        stampMapMap.get(stampName).set("stampStatus", stampStatus);
+      if (stampMap.has(stampName)) {
+        stampStatus = !stampMap.get(stampName);
+        stampMap.set(stampName, stampStatus);
 
         if (stampStatus) {
           pressStamp(elem2, stampType);
@@ -394,7 +371,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
         }
       } else {
         stampStatus = !stampStatus;
-        stampMapMap.set(stampName, initStampMap(stampStatus, objId));
+        stampMap.set(stampName, stampStatus);
         pressStamp(elem2, stampType);
       }
 

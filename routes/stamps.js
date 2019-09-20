@@ -3,12 +3,15 @@
 const express = require('express');
 const router = express.Router();
 const authenticationEnsurer = require('./authentication-ensurer');
+const moment = require('moment');
+
+const Objective = require('../models/objective');
 const Stamp = require('../models/stamp');
 const Month = require('../models/month');
-const Objective = require('../models/objective');
+
 const colorLog = require('../utils/colorLog');
-const aggregateStamps = require('./aggregateStamps');
-const moment = require('moment');
+const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
+const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
 
 router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationEnsurer, (req, res, next) => {
   const objectiveId = req.params.objectiveId;
@@ -40,15 +43,21 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationE
     return Objective.findOne({
       where: { objectiveId: objectiveId }
     }).then((objective) => {
-      return aggregateStamps(objective, moment());
+      const today = moment().startOf('date');
+      return totalAggregateStamps(objective, today).then((objective) => {
+        return thisWeekAggregateStamps(objective, today);
+      });
     });
   }).then((objective) => {
     res.json({ 
       status: 'OK', 
       stampStatus: stampStatus, 
       aggregate: {
-        achievedNum: objective.achievedNum, // 今日までの達成数
-        objAchvRate: objective.objAchvRate, // 今日まで達成率(%)
+        thisWeekAchvNum: objective.thisWeekAchvNum, // 今週の達成数
+        thisWeekAchvRate: objective.thisWeekAchvRate, // 今週の達成率(%)
+        totalAchvNum: objective.totalAchvNum, // 今日までの総達成数
+        totalAchvRate: objective.totalAchvRate, // 今日まで総達成率(%)
+        elapsedDays: objective.elapsedDays, // 開始日からの経過日数
         remainingDays: objective.remainingDays // 期限日までの残日数
       }
     });

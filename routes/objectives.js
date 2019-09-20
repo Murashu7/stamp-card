@@ -2,20 +2,21 @@
 
 const express = require('express')
 const router = express.Router();
-const authenticationEnsurer = require('./authentication-ensurer');
 const uuid = require('uuid');
+const { validationResult } = require("express-validator/check");
+const validators = require('./validators');
+
 const User = require('../models/user');
 const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
+const authenticationEnsurer = require('./authentication-ensurer');
+
 const moment = require('moment-timezone');
-const aggregateStamps = require('./aggregateStamps');
 const stampTypeObj = require('./stamp-type');
-
+const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
+const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
 const colorLog = require('../utils/colorLog');
-
-const { validationResult } = require("express-validator/check");
-const validators = require('./validators');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user, stampTypeObj: stampTypeObj });
@@ -79,8 +80,10 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       objective.formattedCreatedAt = moment(objective.createdAt).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
-      // 頻度と目標の達成率
-      return aggregateStamps(objective, moment().startOf('date')).then((objective) => {
+      // 集計処理
+      return totalAggregateStamps(objective, moment().startOf('date')).then((objective) => {
+        return thisWeekAggregateStamps(objective,  moment().startOf('date'));
+      }).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
           order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]

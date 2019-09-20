@@ -4,14 +4,21 @@ block content
   h3.my-3!= stampTypeObj.map.get(objective.stampType)
     span  #{objective.objectiveName}
   ul
-    li 今日までの達成回数: 
-      span#achievedNum #{objective.achievedNum}
+    li 今週の達成回数: 
+      span#thisWeekAchvNum #{objective.thisWeekAchvNum}
       span 回 ( 達成率: 
-      span#objAchvRate #{objective.objAchvRate}
+      span#thisWeekAchvRate #{objective.thisWeekAchvRate}
       span % )
-    li 期限まで残り
+    li 今日までの総達成回数: 
+      span#totalAchvNum #{objective.totalAchvNum}
+      span 回 ( 達成率: 
+      span#totalAchvRate #{objective.totalAchvRate}
+      span % )
+    li 経過日数: 
+      span#elapsedDays #{objective.elapsedDays}
+      span 日目 ( 残り: 
       span#remainingDays #{objective.remainingDays}
-      span 日
+      span 日 )
   div(data-objid=objective.objectiveId data-calmonth=month.monthName data-today=today data-createdat=objective.createdAt data-dueday=objective.dueDay data-stamps=stamps data-stamptype=objective.stampType)#calendar
   div
     table.table.table-bordered

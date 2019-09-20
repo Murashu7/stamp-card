@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const loader = require('../models/sequelize-loader');
+const sequelize = loader.database;
+const moment = require('moment-timezone');
+
 const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 
-const moment = require('moment-timezone');
-const colorLog = require('../utils/colorLog.js');
-
-const loader = require('../models/sequelize-loader');
-const sequelize = loader.database;
-const aggregateStamps = require('./aggregateStamps');
 const stampTypeObj = require('./stamp-type');
+const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
+const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
+const colorLog = require('../utils/colorLog.js');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -29,7 +30,8 @@ router.get('/', function(req, res, next) {
 
       const promises = objectives.map((objective) => {
         objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
-        return aggregateStamps(objective, today);
+        // 集計操作
+        return totalAggregateStamps(objective, today);
       });
       return Promise.all(promises);
 

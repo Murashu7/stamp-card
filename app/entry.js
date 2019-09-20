@@ -34,8 +34,11 @@ if (pathName.match(/objectives\/new/)) {
   prev.innerText = "前の月";
   next.innerText = "次の月";
 
-  const achievedNum = document.getElementById('achievedNum');
-  const objAchvRate = document.getElementById('objAchvRate');
+  const thisWeekAchvNum = document.getElementById('thisWeekAchvNum');
+  const thisWeekAchvRate = document.getElementById('thisWeekAchvRate');
+  const totalAchvNum = document.getElementById('totalAchvNum');
+  const totalAchvRate = document.getElementById('totalAchvRate');
+  const elapsedDays = document.getElementById('elapsedDays');
   const remainingDays = document.getElementById('remainingDays');
 
   // Server → pug → JS
@@ -242,12 +245,18 @@ if (pathName.match(/objectives\/new/)) {
       }
       postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
         .then((data) => {
-          const num = data["aggregate"]["achievedNum"];
-          const rate = data["aggregate"]["objAchvRate"];
-          const days = data["aggregate"]["remainingDays"];
-          achievedNum.innerText = `${num}`;
-          objAchvRate.innerText = `${rate}`;
-          remainingDays.innerText = `${days}`;
+          const w_num = data["aggregate"]["thisWeekAchvNum"];
+          const w_rate = data["aggregate"]["thisWeekAchvRate"];
+          const t_num = data["aggregate"]["totalAchvNum"];
+          const t_rate = data["aggregate"]["totalAchvRate"];
+          const e_days = data["aggregate"]["elapsedDays"];
+          const r_days = data["aggregate"]["remainingDays"];
+          thisWeekAchvNum.innerText = `${w_num}`;
+          thisWeekAchvRate.innerText = `${w_rate}`;
+          totalAchvNum.innerText = `${t_num}`;
+          totalAchvRate.innerText = `${t_rate}`;
+          elapsedDays.innerText = `${e_days}`;
+          remainingDays.innerText = `${r_days}`;
         })
         .catch(error => console.error(error));
     }, false);

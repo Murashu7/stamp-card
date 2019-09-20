@@ -11,18 +11,18 @@ block content
         thead
           tr
             th 目標
-            th 達成回数
-            th 達成率
-            th 残り日数
+            th 総達成回数
+            th 総達成率
+            th 経過日数
         tbody
         each objective in objectives
           tr
             td
               a(href=`/objectives/${objective.objectiveId}/months/${monthName}`)!= stampTypeObj.map.get(objective.stampType)
                 span  #{objective.objectiveName}
-            td #{objective.achievedNum} 回
-            td #{objective.objAchvRate} %
-            td 残り #{objective.remainingDays} 日
+            td #{objective.totalAchvNum} 回
+            td #{objective.totalAchvRate} %
+            td #{objective.elapsedDays} 日目
   else
     div.jumbotron.my-3
       h1.display-4.mb-5.text-center スタンプを押して目標管理！

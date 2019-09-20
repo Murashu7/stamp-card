@@ -154,8 +154,11 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   next.id = "next";
   prev.innerText = "前の月";
   next.innerText = "次の月";
-  var achievedNum = document.getElementById('achievedNum');
-  var objAchvRate = document.getElementById('objAchvRate');
+  var thisWeekAchvNum = document.getElementById('thisWeekAchvNum');
+  var thisWeekAchvRate = document.getElementById('thisWeekAchvRate');
+  var totalAchvNum = document.getElementById('totalAchvNum');
+  var totalAchvRate = document.getElementById('totalAchvRate');
+  var elapsedDays = document.getElementById('elapsedDays');
   var remainingDays = document.getElementById('remainingDays'); // Server → pug → JS
 
   var calDate = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(cal.dataset.calmonth);
@@ -379,12 +382,18 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
       postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
         stampStatus: stampStatus
       }).then(function (data) {
-        var num = data["aggregate"]["achievedNum"];
-        var rate = data["aggregate"]["objAchvRate"];
-        var days = data["aggregate"]["remainingDays"];
-        achievedNum.innerText = "".concat(num);
-        objAchvRate.innerText = "".concat(rate);
-        remainingDays.innerText = "".concat(days);
+        var w_num = data["aggregate"]["thisWeekAchvNum"];
+        var w_rate = data["aggregate"]["thisWeekAchvRate"];
+        var t_num = data["aggregate"]["totalAchvNum"];
+        var t_rate = data["aggregate"]["totalAchvRate"];
+        var e_days = data["aggregate"]["elapsedDays"];
+        var r_days = data["aggregate"]["remainingDays"];
+        thisWeekAchvNum.innerText = "".concat(w_num);
+        thisWeekAchvRate.innerText = "".concat(w_rate);
+        totalAchvNum.innerText = "".concat(t_num);
+        totalAchvRate.innerText = "".concat(t_rate);
+        elapsedDays.innerText = "".concat(e_days);
+        remainingDays.innerText = "".concat(r_days);
       }).catch(function (error) {
         return console.error(error);
       });

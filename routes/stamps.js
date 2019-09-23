@@ -9,7 +9,7 @@ const Objective = require('../models/objective');
 const Stamp = require('../models/stamp');
 const Month = require('../models/month');
 
-const colorLog = require('../utils/colorLog');
+const colorLog = require('../utils/color-log');
 const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
 const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
 

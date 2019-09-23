@@ -7,7 +7,7 @@ const sequelize = loader.database;
 const moment = require('moment-timezone');
 
 const WeekRange = require('./moment-week-range');
-const colorLog = require('../utils/colorLog');
+const colorLog = require('../utils/color-log');
 
 // 総達成回数を集計する
 const totalAggregateStamps = function(objective, today) {

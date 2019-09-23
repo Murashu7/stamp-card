@@ -18,11 +18,19 @@ html
         if user
           div.dropdown
             a(href="#", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false", role="button").nav-link.dropdown-toggle#dropdown
-              img(src=user._json.avatar_url, width=30, height=30, alt="")
-            div(aria-labelledby="dropdownMenuButton").dropdown-menu.dropdown-menu-right
-              h6.dropdown-header #{user.username}
-              div.dropdown-divider
-              a(href="/logout").dropdown-item ログアウト
+              - var isUserJson = user._json
+              if isUserJson
+                img(src=user._json.avatar_url, width=30, height=30, alt="")
+              else
+                span #{user.username}
+            if isUserJson
+              div(aria-labelledby="dropdownMenuButton").dropdown-menu.dropdown-menu-right
+                h6.dropdown-header #{user.username}
+                div.dropdown-divider
+                a(href="/logout").dropdown-item ログアウト
+            else
+              div(aria-labelledby="dropdownMenuButton").dropdown-menu.dropdown-menu-right
+                    a(href="/logout").dropdown-item ログアウト
     div.container
       block content
     footer.mt-5

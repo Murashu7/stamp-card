@@ -16,7 +16,7 @@ const moment = require('moment-timezone');
 const stampTypeObj = require('./stamp-type');
 const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
 const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
-const colorLog = require('../utils/colorLog');
+const colorLog = require('../utils/color-log');
 
 router.get('/new', authenticationEnsurer, (req, res, next) => {
   res.render('new', { user: req.user, stampTypeObj: stampTypeObj });

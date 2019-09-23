@@ -11,13 +11,18 @@ const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 
+const totalAggregateStamps = require('../routes/aggregate-stamps.js').totalAggregateStamps;
+const thisWeekAggregateStamps = require('../routes/aggregate-stamps.js').thisAggregateStamps;
+
+const colorLog = require('../utils/color-log');
+
 
 describe('/login', () => {
 
   // テスト前
   before(() => {
     passportStub.install(app);
-    passportStub.login({ username: 'testuser' });
+    passportStub.login({ id: 0, username: 'testuser', _json: {avatar_url: "https://avatars/dummy"}});
   });
 
   // テスト後
@@ -30,11 +35,18 @@ describe('/login', () => {
     request(app)
       .get('/login')
       .expect('Content-Type', 'text/html; charset=utf-8')
-      .expect(/<a class="btn btn-info my-3" href="\/auth\/github"/)
+      .expect(/<a class="btn btn-info btn-block my-5" href="\/auth\/github"/)
       .expect(200, done);
   });
 
-  it('ログイン時はユーザー名が表示される', (done) => {
+  it('ログイン時はアバターの url が含まれる', (done) => {
+    request(app)
+      .get('/login')
+      .expect(/<img src="https:\/\/avatars\/dummy"/)
+      .expect(200, done);
+  });
+  
+  it('ログイン時はユーザー名が含まれる', (done) => {
     request(app)
       .get('/login')
       .expect(/testuser/)
@@ -49,6 +61,7 @@ describe('/login', () => {
   });
 
 });
+
 
 describe('/objectives', () => {
   before(() => {
@@ -65,23 +78,25 @@ describe('/objectives', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テスト目的1', dueDay:'2025-09-01', memo: 'テストメモ1', frequency: 4, })
+        .send({ objectiveName: 'テスト目的1', stampType: 'star',  dueDay:'2025-09-01', memo: 'テストメモ1', frequency: 4, })
         .expect('Location', /objectives/)
         .expect(302)
         .end((err, res) => {
           let createdObjectivePath = res.headers.location;
+          console.log({ createdObjectivePath });
           request(app)
             .get(createdObjectivePath)
             // 作成された目的が表示されていることをテストする
+            .expect(/&#x2b50;/) // スタンプ star
             .expect(/テスト目的1/)
-            .expect(/2025\/09\/01/)
-            .expect(/4/)
+            .expect(/2025\/09\/01 まで/)
+            .expect(/4 回/)
             .expect(/テストメモ1/)
             .expect(200)
             .end((err, res) => {
               // month のテスト
               const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
-              const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+              const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
               Month.findAll({
                 where: { objectiveId: objectiveId }
               }).then((months) => {
@@ -111,11 +126,11 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テストスタンプ更新目的1', dueDay:'2025-09-01', memo: 'テストスタンプ更新メモ1', frequency: 4, })
+        .send({ objectiveName: 'テストスタンプ更新目的1', stampType: 'circle', dueDay:'2025-09-01', memo: 'テストスタンプ更新メモ1', frequency: 4, })
         .end((err, res) => {
           const createdObjectivePath = res.header.location;
           const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
-          const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+          const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
           Month.findOne({
             where: { objectiveId: objectiveId, monthName: monthName }
           }).then((month) => {
@@ -123,8 +138,8 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
             request(app)
               .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
               .send({ stampStatus: true })
-              // テストを実行した日によって期限日までの週数は変わってくるので省略
-              .expect(/\{"status":"OK","stampStatus":true,"achvRate":{"freqAchvRate_p":25,"freqAchvRate_f":"\( 1 ／ 4 \)","objAchvRate_p":0,"objAchvRate_f":"\( 1 ／/)
+              // 集計結果は別テストで検証(今日の日付 = テスト日によって集計結果が都度変わるため)
+              .expect(/\{"status":"OK","stampStatus":true,"aggregate":{"thisWeekAchvNum":/)
               .end((err, res) => {
                 Stamp.findAll({
                   where: { objectiveId: objectiveId }
@@ -142,6 +157,7 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampName', () => {
   });
 });
 
+// OK
 describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
   before(() => {
     passportStub.install(app);
@@ -157,17 +173,18 @@ describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テスト更新目的1', dueDay:'2025-09-01', memo: 'テスト更新メモ1', frequency: 2 })
+        .send({ objectiveName: 'テスト更新目的1', stampType: 'circle', dueDay:'2025-09-01', memo: 'テスト更新メモ1', frequency: 2 })
         .end((err, res) => {
           const createdObjectivePath = res.headers.location;
           const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
           const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
           request(app)
             .post(`/objectives/${objectiveId}?edit=1&month=${"2025-09-01"}`)
-            .send({ objectiveName: 'テスト更新目的2', dueDay:'2030-02-01', memo: 'テスト更新メモ2', frequency: 2 })
+            .send({ objectiveName: 'テスト更新目的2', stampType: 'star', dueDay:'2030-02-01', memo: 'テスト更新メモ2', frequency: 2 })
             .end((err, res) => {
               Objective.findByPk(objectiveId).then((o) => {
                 assert.equal(o.objectiveName, 'テスト更新目的2');
+                assert.equal(o.stampType, 'star');
                 assert.equal(moment(o.dueDay).tz('Asia/Tokyo').format('YYYY-MM-DD'), '2030-02-01');
                 assert.equal(o.memo, 'テスト更新メモ2');
                 assert.equal(o.frequency, 2)
@@ -186,6 +203,7 @@ describe('/objective/:objectiveId?edit=1&month=:monthName', () => {
   });
 });
 
+// OK
 describe('/objectives/:objectiveId?delete=1', () => {
   before(() => {
     passportStub.install(app);
@@ -201,11 +219,11 @@ describe('/objectives/:objectiveId?delete=1', () => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
       request(app)
         .post('/objectives')
-        .send({ objectiveName: 'テスト削除目標1', memo: 'テスト削除メモ1', frequency: 4, dueDay: '2019-12-01' })
+        .send({ objectiveName: 'テスト削除目標1', stampType: 'circle',  memo: 'テスト削除メモ1', frequency: 4, dueDay: '2019-12-01' })
         .end((err, res) => {
           const createdObjectivePath = res.headers.location;
           const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
-          const monthName = moment(new Date()).tz('Asia/Tokyo').format('YYYY-MM');
+          const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
 
           // stamp 作成
           const promiseStamp = Month.findOne({
@@ -261,4 +279,97 @@ describe('/objectives/:objectiveId?delete=1', () => {
         });
     });
   });
+});
+
+describe.only('aggregate', () => {
+
+  // テスト前
+  before(() => {
+    passportStub.install(app);
+    passportStub.login({ id: 0, username: 'testuser' });
+  });
+
+  // テスト後
+  after(() => {
+    passportStub.logout();
+    passportStub.uninstall(app);
+  });
+
+  it('スタンプの集計がただしいか確認', (done) => {
+    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+      request(app)
+        .post('/objectives')
+        .send({ objectiveName: 'テスト集計目標1', stampType: 'circle',  memo: 'テスト集計メモ1', frequency: 4, dueDay: '2019-12-01' })
+        .end((err, res) => {
+          const createdObjectivePath = res.headers.location;
+          const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+          const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
+
+          // stamp 作成
+          const promiseStamps = Month.findOne({
+            where: { 
+              objectiveId: objectiveId,
+              monthName: monthName
+            }
+          })
+          const s1 = promiseStamps.then((month) => {
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${1}`)
+                .send({ stampStatus: true })
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });    
+          });
+          const s2 = promiseStamps.then((month) => {
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${2}`)
+                .send({ stampStatus: true })
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });    
+          });
+          const s3 = promiseStamps.then((month) => {
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${3}`)
+                .send({ stampStatus: true })
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });    
+          });
+          const s4 = promiseStamps.then((month) => {
+            return new Promise((resolve) => {
+              request(app)
+                .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${4}`)
+                .send({ stampStatus: true })
+                .end((err, res) => {
+                  if (err) done(err);
+                  resolve();
+                });
+            });    
+          });
+          Promise.all([s1, s2, s3, s4]).then(() => {
+            return Objective.findOne({
+              where: { objectiveId: objectiveId }
+            });
+          }).then((objective) => {
+            return totalAggregateStamps(objective, moment().startOf('date'))
+          }).then((objective) => {
+            assert.equal(objective.totalAchvNum, 4);
+            // TODO: moment-week-range を利用して今週のスタンプを作成するか？
+            // assert.equal(objective.thisWeekAchvRate, 4);
+            if (err) return done(err);
+            deleteObjectiveAggregate(objectiveId, done, err);
+          });
+        });
+      });
+    });
 });

@@ -11,7 +11,7 @@ const Stamp = require('../models/stamp');
 const stampTypeObj = require('./stamp-type');
 const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
 const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
-const colorLog = require('../utils/colorLog.js');
+const colorLog = require('../utils/color-log.js');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {

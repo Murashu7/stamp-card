@@ -19,9 +19,9 @@ const totalAggregateStamps = function(objective, today) {
   const remainingDays = weekRange.remainingDays(); // 今日から終了日までの残日数
   const goalTimes = (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
 
-  const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
-  const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
-  const stampNames = createStampNames(monthNames, currentDates);
+  // const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
+  // const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
+  // const stampNames = createStampNames(monthNames, currentDates);
 
   return Stamp.findOne({
     where: { 
@@ -119,5 +119,7 @@ function createMonthNameFromDate(date) {
 
 module.exports = {
   totalAggregateStamps: totalAggregateStamps,
-  thisWeekAggregateStamps: thisWeekAggregateStamps
+  thisWeekAggregateStamps: thisWeekAggregateStamps,
+  createStampNames: createStampNames,
+  createMonthNames: createMonthNames
 }

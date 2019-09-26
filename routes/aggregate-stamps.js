@@ -52,7 +52,7 @@ const thisWeekAggregateStamps = function(objective, today) {
   const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
   const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
   const stampNames = createStampNames(monthNames, currentDates);
-  const goalTimes =  Math.round((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
+  const goalTimes =  Math.ceil((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
 
   return Month.findAll({
     where: {
@@ -77,10 +77,10 @@ const thisWeekAggregateStamps = function(objective, today) {
       ]
     }).then((result) => {
       return new Promise((resolve) => {
-         const thisWeekAchvNum = result.dataValues['countStatus'];
-         objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
-         objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
-         resolve(objective);
+        const thisWeekAchvNum = result.dataValues['countStatus'];
+        objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
+        objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
+        resolve(objective);
       });
     })
   });

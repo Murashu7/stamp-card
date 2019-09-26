@@ -35,6 +35,7 @@ router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, n
       memo: req.body.memo,
       dueDay: req.body.dueDay,
       frequency: req.body.frequency,
+      csrfToken: req.csrfToken(),
       errors: errors.array()
     });
   } else {
@@ -169,6 +170,7 @@ router.post('/:objectiveId', authenticationEnsurer, validators, csrfProtection, 
       frequency: req.body.frequency,
       monthName: req.query.month,
       stampTypeObj: stampTypeObj,
+      csrfToken: req.csrfToken(),
       errors: errors.array()
     });
   } else {

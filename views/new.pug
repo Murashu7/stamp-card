@@ -10,6 +10,7 @@ block content
         ul.list-group
           li #{errorName[error.param]} : #{error.msg}
   form(method="post" action="/objectives").my-3
+    input(type="hidden" name="_csrf" value!=csrfToken)
     div.form-group
       label(for="objectiveName") 目標名
       if objectiveName

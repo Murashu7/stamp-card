@@ -11,6 +11,7 @@ block content
         ul.list-group
           li #{errorName[error.param]} : #{error.msg}
   form(method="post", action=`/objectives/${objectiveId}?edit=1&month=${monthName}`)
+    input(type="hidden" name="_csrf" value!=csrfToken)
     div.form-group
       label(for="objectiveName") 目標名
       input(type="text" name="objectiveName" value=objectiveName).form-control
@@ -40,5 +41,6 @@ block content
     div
       button(type="submit").btn.btn-info 以上の内容で目標を編集する
   h5.mt-5 危険な編集
-  form(id="deleteForm" method="post", action=`/objectives/${objectiveId}?delete=1` onsubmit="return false;")
+  form(id="deleteForm" method="post", action=`/objectives/${objectiveId}?delete=1`)
+    input(type="hidden" name="_csrf" value!=csrfToken)
     button(id="deleteBtn").btn.btn-danger この目標を削除する

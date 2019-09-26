@@ -5,6 +5,8 @@ const router = express.Router();
 const uuid = require('uuid');
 const { validationResult } = require("express-validator/check");
 const validators = require('./validators');
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
 
 const User = require('../models/user');
 const Objective = require('../models/objective');
@@ -18,11 +20,11 @@ const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
 const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
 const colorLog = require('../utils/color-log');
 
-router.get('/new', authenticationEnsurer, (req, res, next) => {
-  res.render('new', { user: req.user, stampTypeObj: stampTypeObj });
+router.get('/new', authenticationEnsurer, csrfProtection, (req, res, next) => {
+  res.render('new', { user: req.user, stampTypeObj: stampTypeObj, csrfToken: req.csrfToken() });
 });
 
-router.post('/', authenticationEnsurer, validators, (req, res, next) => {
+router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.render('new', {
@@ -120,7 +122,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
   });
 });
 
-router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
+router.get('/:objectiveId/edit', authenticationEnsurer, csrfProtection, (req, res, next) => {
   Objective.findOne({
     where: {
       objectiveId: req.params.objectiveId
@@ -138,7 +140,8 @@ router.get('/:objectiveId/edit', authenticationEnsurer, (req, res, next) => {
         formattedDueDay: objective.formattedDueDay,
         memo: objective.memo,
         monthName: monthName,
-        stampTypeObj: stampTypeObj
+        stampTypeObj: stampTypeObj,
+        csrfToken: req.csrfToken()
       });
     } else {
       const err = new Error('指定された目標がない、または編集する権限がありません');
@@ -152,7 +155,7 @@ const isMine = function(req, objective) {
   return objective && parseInt(objective.createdBy) === parseInt(req.user.id);
 }
 
-router.post('/:objectiveId', authenticationEnsurer, validators, (req, res, next) => {
+router.post('/:objectiveId', authenticationEnsurer, validators, csrfProtection, (req, res, next) => {
   const today = moment().startOf('date');
   const errors = validationResult(req);
   if (!errors.isEmpty() && parseInt(req.query.edit) === 1) {

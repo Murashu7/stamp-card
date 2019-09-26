@@ -14,10 +14,10 @@ if (pathName.match(/objectives\/new/)) {
 
 } else if (pathName.match(/edit/) || queryStrs.match(/edit/)) {
   // 削除フォーム
-  const deleteBtn = document.getElementById('deleteBtn');
   const deleteForm = document.getElementById('deleteForm');
 
-  deleteBtn.addEventListener('click', function(e) {
+  deleteForm.addEventListener('submit', function(event) {
+    event.preventDefault();
     if (confirm('本当に削除しますか？')) {
       deleteForm.submit();
     }

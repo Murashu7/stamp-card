@@ -120,4 +120,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+// public フォルダを利用する
+app.use(express.static('public'));
+
 module.exports = app;

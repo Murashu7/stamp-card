@@ -1,3 +1,16 @@
+@font-face {
+    font-family: 'apjapanesefont';
+    src: url('/fonts/APJapanesefont-webfont.woff2') format('woff2'),
+    src: url('/fonts/APJapanesefont-webfont.woff') format('woff'),
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+  font-family: 'apjapanesefont';
+}
+
+/*
 body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
@@ -6,3 +19,4 @@ body {
 a {
   color: #00B7FF;
 }
+*/

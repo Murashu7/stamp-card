@@ -151,10 +151,13 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   var cal = document.getElementById("calendar");
   var prev = document.createElement("button");
   var next = document.createElement("button");
+  var current = document.createElement("button");
   prev.id = "prev";
   next.id = "next";
+  current.id = "current";
   prev.innerText = "前の月";
   next.innerText = "次の月";
+  current.innerText = "今月へ";
   var thisWeekAchvNum = document.getElementById('thisWeekAchvNum');
   var thisWeekAchvRate = document.getElementById('thisWeekAchvRate');
   var totalAchvNum = document.getElementById('totalAchvNum');
@@ -203,31 +206,38 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     var tBody = document.createElement("tbody");
     var tr = document.createElement("tr");
     var h5 = document.createElement("h5");
-    var tableTitle_btns = document.createElement("div");
-    var tableBtns = document.createElement("div");
+    var cal_title_btns = document.createElement("div");
+    var prev_next = document.createElement("div");
     h5.innerText = moment_timezone__WEBPACK_IMPORTED_MODULE_0___default()(calDate).tz('Asia/Tokyo').format('YYYY年MM月'); // スタイル適用( bootstrap )
 
     table.classList.add("table");
     table.classList.add("table-bordered");
     table.style.tableLayout = "fixed";
-    tableTitle_btns.classList.add("d-flex");
-    tableTitle_btns.classList.add("justify-content-between");
-    tableTitle_btns.classList.add("mt-5");
-    tableTitle_btns.classList.add("mb-1");
-    prev.classList.add("mr-2");
-    tableBtns.appendChild(prev);
-    tableBtns.appendChild(next);
-    tableTitle_btns.appendChild(h5);
-    tableTitle_btns.appendChild(tableBtns); // 全ての子要素を削除
+    cal_title_btns.classList.add("d-flex");
+    cal_title_btns.classList.add("justify-content-between");
+    cal_title_btns.classList.add("mt-5");
+    cal_title_btns.classList.add("mb-1");
+    prev.classList.add("mr-2"); // カレンダーのタイトル、ボタン
+
+    prev_next.appendChild(prev);
+    prev_next.appendChild(next);
+    cal_title_btns.appendChild(h5);
+    cal_title_btns.appendChild(current);
+    cal_title_btns.appendChild(prev_next); // 今月の場合は「今月へ」ボタンは無効    
+
+    if (makeCurrentMonth() === calDate.tz('Asia/Tokyo').format('YYYY-MM')) {
+      current.disabled = true;
+    } // 全ての子要素を削除
+
 
     while (cal.firstChild) {
       cal.removeChild(cal.firstChild);
     }
 
-    cal.appendChild(tableTitle_btns);
+    cal.appendChild(cal_title_btns);
     cal.appendChild(table);
     table.appendChild(tHead);
-    tHead.appendChild(tr);
+    tHead.appendChild(tr); // 曜日：日〜土まで作成
 
     for (var i = 0, len = week.length; i < len; i++) {
       var th = document.createElement("th");
@@ -299,11 +309,9 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
               // 期限日
               divLabel.innerText = '終了';
             }
-          } // TODO:
-
+          }
 
           if (stampMap.has(stampName)) {
-            // if (stampMapMap.get(stampName).get("stampStatus")) {
             if (stampMap.get(stampName)) {
               pressStamp(tdBody, stampType);
             } else {
@@ -358,7 +366,6 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
   var addStampEventListener = function addStampEventListener(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function (e) {
-      // TODO: 
       var day = elem1.dataset.day;
       var stampName = day;
       var tdDate = "".concat(date.year(), "-").concat(date.month + 1, "-").concat(day);
@@ -409,6 +416,10 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     return date.add(1, 'M'); // 来月
   };
 
+  var makeCurrentMonth = function makeCurrentMonth() {
+    return today.tz('Asia/Tokyo').format('YYYY-MM');
+  };
+
   var submitForm = function submitForm(objId, monthName) {
     var form = document.createElement('form');
     form.action = "/objectives/".concat(objId, "/months/").concat(monthName);
@@ -425,6 +436,10 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   next.addEventListener('click', function (e) {
     var nextMonth = makeNextMonth(calDate);
     var monthName = nextMonth.tz('Asia/Tokyo').format('YYYY-MM');
+    submitForm(objId, monthName);
+  }, false);
+  current.addEventListener('click', function (e) {
+    var monthName = makeCurrentMonth();
     submitForm(objId, monthName);
   }, false);
   displayCal(calDate);

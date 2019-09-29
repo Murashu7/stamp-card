@@ -325,7 +325,7 @@ describe('/objectives/:objectiveId?delete=1', () => {
   });
 });
 
-describe('aggregate-stamps', () => {
+describe.only('aggregate-stamps', () => {
   // テスト前
   before(() => {
     passportStub.install(app);

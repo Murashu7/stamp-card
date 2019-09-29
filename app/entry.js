@@ -29,10 +29,13 @@ if (pathName.match(/objectives\/new/)) {
   const cal = document.getElementById("calendar");
   const prev = document.createElement("button");
   const next = document.createElement("button");
+  const current = document.createElement("button");
   prev.id = "prev";
   next.id = "next";
+  current.id = "current";
   prev.innerText = "前の月";
   next.innerText = "次の月";
+  current.innerText = "今月へ";
 
   const thisWeekAchvNum = document.getElementById('thisWeekAchvNum');
   const thisWeekAchvRate = document.getElementById('thisWeekAchvRate');
@@ -78,8 +81,8 @@ if (pathName.match(/objectives\/new/)) {
     const tBody = document.createElement("tbody");
     const tr = document.createElement("tr");
     const h5 = document.createElement("h5");
-    const tableTitle_btns = document.createElement("div");
-    const tableBtns = document.createElement("div");
+    const cal_title_btns = document.createElement("div");
+    const prev_next = document.createElement("div");
     
     h5.innerText = moment(calDate).tz('Asia/Tokyo').format('YYYY年MM月');
 
@@ -87,27 +90,35 @@ if (pathName.match(/objectives\/new/)) {
     table.classList.add("table");
     table.classList.add("table-bordered");
     table.style.tableLayout = "fixed";
-    tableTitle_btns.classList.add("d-flex");
-    tableTitle_btns.classList.add("justify-content-between");
-    tableTitle_btns.classList.add("mt-5");
-    tableTitle_btns.classList.add("mb-1");
+    cal_title_btns.classList.add("d-flex");
+    cal_title_btns.classList.add("justify-content-between");
+    cal_title_btns.classList.add("mt-5");
+    cal_title_btns.classList.add("mb-1");
     prev.classList.add("mr-2");
 
-    tableBtns.appendChild(prev);
-    tableBtns.appendChild(next);
-    tableTitle_btns.appendChild(h5);
-    tableTitle_btns.appendChild(tableBtns);
+    // カレンダーのタイトル、ボタン
+    prev_next.appendChild(prev);
+    prev_next.appendChild(next);
+    cal_title_btns.appendChild(h5);
+    cal_title_btns.appendChild(current);
+    cal_title_btns.appendChild(prev_next);
+
+    // 今月の場合は「今月へ」ボタンは無効    
+    if (makeCurrentMonth() === calDate.tz('Asia/Tokyo').format('YYYY-MM')) {
+      current.disabled = true;
+    }
 
     // 全ての子要素を削除
     while (cal.firstChild) {
       cal.removeChild(cal.firstChild);
     }
 
-    cal.appendChild(tableTitle_btns);
+    cal.appendChild(cal_title_btns);
     cal.appendChild(table);
     table.appendChild(tHead);
     tHead.appendChild(tr);
 
+    // 曜日：日〜土まで作成
     for (let i = 0, len = week.length; i < len; i++) {
       let th = document.createElement("th");
       th.classList.add("text-center");
@@ -172,9 +183,7 @@ if (pathName.match(/objectives\/new/)) {
              }
           } 
 
-          // TODO:
           if (stampMap.has(stampName)) {
-            // if (stampMapMap.get(stampName).get("stampStatus")) {
             if (stampMap.get(stampName)) {
               pressStamp(tdBody, stampType);
             } else {
@@ -223,7 +232,6 @@ if (pathName.match(/objectives\/new/)) {
 
   const addStampEventListener = function(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function(e) {
-      // TODO: 
       const day = elem1.dataset.day;
       const stampName = day;
       const tdDate = `${date.year()}-${date.month + 1}-${day}`;
@@ -288,6 +296,10 @@ if (pathName.match(/objectives\/new/)) {
     return date.add(1, 'M'); // 来月
   }
 
+  const makeCurrentMonth = function() {
+    return today.tz('Asia/Tokyo').format('YYYY-MM');
+  }
+
   const submitForm = function(objId, monthName) {
     const form = document.createElement('form');
     form.action = `/objectives/${objId}/months/${monthName}`;
@@ -305,6 +317,11 @@ if (pathName.match(/objectives\/new/)) {
   next.addEventListener('click', function(e) {
     const nextMonth = makeNextMonth(calDate);
     const monthName = nextMonth.tz('Asia/Tokyo').format('YYYY-MM');
+    submitForm(objId, monthName);
+  }, false);
+
+  current.addEventListener('click', function(e) {
+    const monthName = makeCurrentMonth();
     submitForm(objId, monthName);
   }, false);
 

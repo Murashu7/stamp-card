@@ -59,12 +59,14 @@ const thisWeekAggregateStamps = function(objective, today) {
       objectiveId: objective.objectiveId,
       monthName: monthNames
     },
-    order: [['"monthName"', 'DESC']]
+    order: [['"monthName"', 'ASC']]
   }).then((months) => {
     return months.map((m) => {
       return m.monthId;
     });
   }).then((monthIds) => {
+    colorLog.color('blue', monthIds);
+    
     return Stamp.findOne({
       where: { 
         objectiveId: objective.objectiveId,
@@ -109,8 +111,13 @@ function createMonthNames(date1, date2) {
   return monthNames;
 }
 
+// stampName を作成（頭の 0 は削除）
 function createStampNameFromDate(date) {
-  return date.tz('Asia/Tokyo').format('DD');
+  const stampName = date.tz('Asia/Tokyo').format('DD'); 
+  if (stampName[0] === '0') {
+    return stampName.slice(1);
+  }
+  return stampName;
 }
 
 function createMonthNameFromDate(date) {

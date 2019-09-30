@@ -14,8 +14,10 @@ const Stamp = require('../models/stamp');
 
 const totalAggregateStamps = require('../routes/aggregate-stamps.js').totalAggregateStamps;
 const thisWeekAggregateStamps = require('../routes/aggregate-stamps.js').thisWeekAggregateStamps;
-const createStampNames = require('../routes/aggregate-stamps.js').createStampNames;
 const createMonthNames = require('../routes/aggregate-stamps.js').createMonthNames;
+const createStampNames = require('../routes/aggregate-stamps.js').createStampNames;
+const createStampNameMap = require('../routes/aggregate-stamps.js').createStampNameMap;
+
 const WeekRange = require('../routes/moment-week-range');
 
 const colorLog = require('../utils/color-log');
@@ -338,11 +340,12 @@ describe.only('aggregate-stamps', () => {
     passportStub.uninstall(app);
   });
 
-  it('スタンプの集計結果が正しいか確認', (done) => {
+/*
+  it('全スタンプの集計結果が正しいか確認', (done) => {
     User.upsert({ userId: 0, username: 'testuser' }).then(() => {
-      const today = moment().startOf('date'); // today はテストを実行した今日
+      const today = moment().tz('Asia/Tokyo').startOf('date'); // today はテストを実行した今日
       const frequency = 4;
-      const dueDayStr = today.clone().add(2, 'month').tz('Asia/Tokyo').format('YYYY-MM-DD'); // dueDay は today の 2 ヶ月後
+      const dueDayStr = today.clone().add(1, 'month').tz('Asia/Tokyo').format('YYYY-MM-DD'); // dueDay は today の 1 ヶ月後
       request(app)
         .get('/objectives/new')
         .end((err, res) => {
@@ -355,44 +358,45 @@ describe.only('aggregate-stamps', () => {
             .end((err, res) => {
               const createdObjectivePath = res.headers.location;
               const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
-              const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
               const dueDay = moment(dueDayStr);
               
               // スタンプ集計用データ
               const wr = new WeekRange(today, today, dueDay);
               const elapsedDays = wr.elapsedDays();
               const totalGoalTimes = (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
-              
-              const monthNames = createMonthNames(wr.currentRange[0], wr.currentRange[1]);
+              const monthNames = createMonthNames(wr.start, wr.end); // ふた月にまたぐ場合あり
               const start2endDates = WeekRange.arrayDatesRange(wr.start, wr.end); // 開始日から終了日までの日付の配列
-              const stampNames = createStampNames(monthNames, start2endDates); // スタンプは開始日から終了日まで作成する
-              const currentDates = WeekRange.arrayDatesRange(wr.currentRange[0], wr.currentRange[1]);
-              const currentGoalTimes =  Math.round((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
-              const totalStampNum = stampNames.length;
-              const currentStampNum = currentDates.length;
-                 
-              // stamp 作成
-              Month.findOne({
-                where: { 
-                  objectiveId: objectiveId,
-                  monthName: monthName
-                }
-              }).then((month) => {
-                const promises = stampNames.map((stampName) => {
-                  return new Promise((resolve) => {
-                    request(app)
-                      .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampName}`)
-                      .send({ stampStatus: true })
-                      .end((err, res) => {
-                        if (err) done(err);
-                        resolve();
-                      });
+              const stampNameMap = createStampNameMap(monthNames, start2endDates);
+              const totalStampNum = start2endDates.length;
+              
+              // スタンプ作成
+              const monthNamesPromises = monthNames.map((monthName) => {
+                return Month.findOrCreate({
+                  where: {
+                    objectiveId: objectiveId,
+                    monthName: monthName
+                  }
+                }).then(([month, created]) => {
+                  const m = month || created;
+                  return stampNameMap.get(m.monthName).map((stampName) => {
+                    return new Promise((resolve) => {
+                      request(app)
+                        .post(`/objectives/${objectiveId}/months/${m.monthName}/stamps/${stampName}`)
+                        .send({ stampStatus: true })
+                        .end((err, res) => {
+                          if (err) done(err);
+                          resolve();
+                        });
+                    });
                   });
+                }).then((promises) => {
+                  return Promise.all(promises);
                 });
-                return Promise.all(promises).then(() => {
-                  return Objective.findOne({
-                    where: { objectiveId: objectiveId }
-                  });
+              });
+
+              Promise.all(monthNamesPromises).then(() => {
+                return Objective.findOne({
+                  where: { objectiveId: objectiveId }
                 });
               }).then((objective) => {
                 // 集計テスト
@@ -401,6 +405,74 @@ describe.only('aggregate-stamps', () => {
               }).then((objective) => {
                 assert.equal(objective.totalAchvNum, totalStampNum);
                 assert.equal(objective.totalAchvRate, Math.round((totalStampNum / totalGoalTimes) * 100));
+                if (err) return done(err);
+                deleteObjectiveAggregate(objectiveId, done, err);
+              });
+            });
+        });
+     });
+  });
+  */
+
+  it('今週分のスタンプの集計結果が正しいか確認', (done) => {
+    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+      const today = moment().tz('Asia/Tokyo').startOf('date'); // today はテストを実行した今日
+      const frequency = 4;
+      const dueDayStr = today.clone().add(1, 'month').tz('Asia/Tokyo').format('YYYY-MM-DD'); // dueDay は today の 1 ヶ月後
+      request(app)
+        .get('/objectives/new')
+        .end((err, res) => {
+          const match = res.text.match(/<input type="hidden" name="_csrf" value="(.*?)">/);
+          const csrf = match[1];
+          request(app)
+            .post('/objectives')
+            .set('Cookie', res.headers['set-cookie'])
+            .send({ objectiveName: 'テスト集計目標1', stampType: 'circle',  memo: 'テスト集計メモ1', frequency: frequency, dueDay: dueDayStr, _csrf: csrf })
+            .end((err, res) => {
+              const createdObjectivePath = res.headers.location;
+              const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
+              const dueDay = moment(dueDayStr).tz('Asia/Tokyo').startOf('date');
+              
+              // スタンプ集計用データ
+              const wr = new WeekRange(today, today, dueDay);
+              const monthNames = createMonthNames(wr.start, wr.end);
+              const start2endDates = WeekRange.arrayDatesRange(wr.start, wr.end); // 開始日から終了日までの日付の配列
+              const stampNameMap = createStampNameMap(monthNames, start2endDates);
+              const currentDates = WeekRange.arrayDatesRange(wr.currentRange[0], wr.currentRange[1]); // 今週の配列(今週が 7 日以下の場合もある)
+
+              const currentGoalTimes =  Math.round((currentDates.length / 7) * frequency);           
+              const currentStampNum = currentDates.length;
+              
+              // スタンプ作成
+              const monthNamesPromises = monthNames.map((monthName) => {
+                return Month.findOrCreate({
+                  where: {
+                    objectiveId: objectiveId,
+                    monthName: monthName
+                  }
+                }).then(([month, created]) => {
+                  const m = month || created;
+                  return stampNameMap.get(m.monthName).map((stampName) => {
+                    return new Promise((resolve) => {
+                      request(app)
+                        .post(`/objectives/${objectiveId}/months/${m.monthName}/stamps/${stampName}`)
+                        .send({ stampStatus: true })
+                        .end((err, res) => {
+                          if (err) done(err);
+                          resolve();
+                        });
+                    });
+                  });
+                }).then((promises) => {
+                  return Promise.all(promises);
+                });
+              });
+              Promise.all(monthNamesPromises).then(() => {
+                return Objective.findOne({
+                  where: { objectiveId: objectiveId }
+                });
+              }).then((objective) => {
+                // 集計テスト
                 // 今週のスタンプ集計
                 return thisWeekAggregateStamps(objective, today);
               }).then((objective) => {

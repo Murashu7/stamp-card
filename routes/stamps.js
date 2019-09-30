@@ -43,7 +43,7 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationE
     return Objective.findOne({
       where: { objectiveId: objectiveId }
     }).then((objective) => {
-      const today = moment().startOf('date');
+      const today = moment().tz('Asia/Tokyo').startOf('date');
       return totalAggregateStamps(objective, today).then((objective) => {
         return thisWeekAggregateStamps(objective, today);
       });

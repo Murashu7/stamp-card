@@ -45,18 +45,23 @@ const totalAggregateStamps = function(objective, today) {
 
 // 今週の達成回数を集計する
 const thisWeekAggregateStamps = function(objective, today) {
+  const objectiveId = objective.objectiveId;
   const frequency = objective.frequency; // 目標回数
-  const createdAt = moment(objective.createdAt); // 開始日
-  const dueDay = moment(objective.dueDay); // 終了日
+  const createdAt = moment(objective.createdAt).tz('Asia/Tokyo'); // 開始日
+  const dueDay = moment(objective.dueDay).tz('Asia/Tokyo'); // 終了日
+
   const weekRange = new WeekRange(createdAt, today, dueDay);
   const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
   const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
   const stampNames = createStampNames(monthNames, currentDates);
   const goalTimes =  Math.ceil((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
+  console.log({currentDates});
+  console.log({monthNames});
+  console.log({stampNames});
 
   return Month.findAll({
     where: {
-      objectiveId: objective.objectiveId,
+      objectiveId: objectiveId,
       monthName: monthNames
     },
     order: [['"monthName"', 'ASC']]
@@ -65,11 +70,11 @@ const thisWeekAggregateStamps = function(objective, today) {
       return m.monthId;
     });
   }).then((monthIds) => {
-    colorLog.color('blue', monthIds);
     
+    // TODO: この検索だと、9月は29, 30日で10月は1, 2, 3, 4, 5, ...日で抽出したいが、10月に29日も含まれてしまう
     return Stamp.findOne({
       where: { 
-        objectiveId: objective.objectiveId,
+        objectiveId: objectiveId,
         monthId: monthIds,
         stampName: stampNames,
         stampStatus: true
@@ -88,9 +93,9 @@ const thisWeekAggregateStamps = function(objective, today) {
   });
 }
 
-function createStampNames(monthNames, currentDates) {
+function createStampNames(monthNames, dates) {
   const results = [];
-  currentDates.forEach((c) => { 
+  dates.forEach((c) => { 
     monthNames.forEach((monthName) => {
       if (monthName === createMonthNameFromDate(c)) {
         results.push(createStampNameFromDate(c));
@@ -98,6 +103,20 @@ function createStampNames(monthNames, currentDates) {
     });
   });
   return results;
+}
+
+function createStampNameMap(monthNames, dates) {
+  const map = new Map();
+  monthNames.forEach((monthName) => { 
+    let array = [];
+    dates.forEach((date) => {
+      if (monthName === createMonthNameFromDate(date)) {
+        array.push(createStampNameFromDate(date));
+        map.set(monthName, array);
+      }
+    });
+  });
+  return map;
 }
 
 function createMonthNames(date1, date2) {
@@ -111,7 +130,7 @@ function createMonthNames(date1, date2) {
   return monthNames;
 }
 
-// stampName を作成（頭の 0 は削除）
+// stampName を作成
 function createStampNameFromDate(date) {
   const stampName = date.tz('Asia/Tokyo').format('DD'); 
   if (stampName[0] === '0') {
@@ -128,5 +147,6 @@ module.exports = {
   totalAggregateStamps: totalAggregateStamps,
   thisWeekAggregateStamps: thisWeekAggregateStamps,
   createStampNames: createStampNames,
-  createMonthNames: createMonthNames
+  createMonthNames: createMonthNames,
+  createStampNameMap: createStampNameMap
 }

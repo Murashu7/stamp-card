@@ -40,7 +40,7 @@ router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, n
     });
   } else {
     const objectiveId = uuid.v4();
-    const today = moment().startOf('date');
+    const today = moment().tz('Asia/Tokyo').startOf('date');
 
     Objective.create({
       objectiveId: objectiveId,
@@ -50,7 +50,7 @@ router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, n
       createdBy: req.user.id,
       createdAt: today,
       updatedAt: today,
-      dueDay: moment(req.body.dueDay),
+      dueDay: moment(req.body.dueDay).tz('Asia/Tokyo').startOf('date'),
       frequency: req.body.frequency
     }).then((objective) => {
       return Month.create({
@@ -84,8 +84,8 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       objective.formattedCreatedAt = moment(objective.createdAt).tz('Asia/Tokyo').format('YYYY/MM/DD');
       
       // 集計処理
-      return totalAggregateStamps(objective, moment().startOf('date')).then((objective) => {
-        return thisWeekAggregateStamps(objective,  moment().startOf('date'));
+      return totalAggregateStamps(objective, moment().tz('Asia/Tokyo').startOf('date')).then((objective) => {
+        return thisWeekAggregateStamps(objective,  moment().tz('Asia/Tokyo').startOf('date'));
       }).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
@@ -116,7 +116,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       user: req.user,
       objective: storedObjective,
       month: storedMonth,
-      today: moment().startOf('date'),
+      today: moment().tz('Asia/Tokyo').startOf('date'),
       stamps: stampsData,
       stampTypeObj: stampTypeObj
     });
@@ -157,7 +157,7 @@ const isMine = function(req, objective) {
 }
 
 router.post('/:objectiveId', authenticationEnsurer, validators, csrfProtection, (req, res, next) => {
-  const today = moment().startOf('date');
+  const today = moment().tz('Asia/Tokyo').startOf('date');
   const errors = validationResult(req);
   if (!errors.isEmpty() && parseInt(req.query.edit) === 1) {
     res.render('edit', {
@@ -187,7 +187,7 @@ router.post('/:objectiveId', authenticationEnsurer, validators, csrfProtection, 
             memo: req.body.memo,
             createdBy: req.user.id,
             updatedAt: updatedAt,
-            dueDay: moment(req.body.dueDay),
+            dueDay: moment(req.body.dueDay).tz('Asia/Tokyo').startOf('date'),
             frequency: req.body.frequency
           }).then((objective) => {
             const monthName = req.query.month || parseMonthName(today);

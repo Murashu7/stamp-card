@@ -17,7 +17,7 @@ const colorLog = require('../utils/color-log.js');
 router.get('/', function(req, res, next) {
   const title = "スタンプカードくん";
   let storedObjectives = null;
-  const today = moment().startOf('date');
+  const today = moment().tz('Asia/Tokyo').startOf('date');
   const monthName = moment(today).tz('Asia/Tokyo').format('YYYY-MM');
 
   if (req.user) {

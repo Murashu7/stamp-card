@@ -9,8 +9,8 @@ const Stamp = loader.database.define('stamps', {
     autoIncrement: true,
     allowNull: false
   },
-  stampName: {
-    type: Sequelize.STRING,
+  stampDate: {
+    type: Sequelize.INTEGER,
     allowNull: false
   },
   stampStatus: {

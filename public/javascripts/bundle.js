@@ -183,7 +183,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
     if (tmp) {
       tmp.forEach(function (t) {
         var json = JSON.parse(t);
-        stampMap.set(json.stampName, json.stampStatus);
+        stampMap.set(json.stampDate, json.stampStatus);
       });
     }
 
@@ -191,6 +191,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   };
 
   var stampMap = setupStampMap(stampStrs);
+  console.log(stampMap);
 
   var displayCal = function displayCal(calDate) {
     var firstDay = calDate.startOf('month'); // その月の初日
@@ -289,7 +290,7 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
           td.setAttribute('data-day', days);
           var day = td.dataset.day;
           var tdDate = calDate.set('date', day).tz('Asia/Tokyo').format('YYYY-MM-DD');
-          var stampName = day;
+          var stampDate = day.match(/^\d*$/) ? Number(day) : null;
 
           if (todayStr === tdDate) {
             // 今日の td に色付け
@@ -311,8 +312,8 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
             }
           }
 
-          if (stampMap.has(stampName)) {
-            if (stampMap.get(stampName)) {
+          if (stampMap.has(stampDate)) {
+            if (stampMap.get(stampDate)) {
               pressStamp(tdBody, stampType);
             } else {
               removeStamp(tdBody);
@@ -344,14 +345,6 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
 
       tBody.appendChild(_tr);
     }
-  }; // TODO: stamp の属性見直し(status, type, color 不要)
-
-
-  var initStampMap = function initStampMap(stampStatus, objId) {
-    var stampMap = new Map();
-    stampMap.set("stampStatus", stampStatus);
-    stampMap.set("objectiveId", objId);
-    return stampMap;
   };
 
   var pressStamp = function pressStamp(elem, type) {
@@ -367,14 +360,14 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
   var addStampEventListener = function addStampEventListener(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function (e) {
       var day = elem1.dataset.day;
-      var stampName = day;
+      var stampDate = day.match(/^\d*$/) ? Number(day) : null;
       var tdDate = "".concat(date.year(), "-").concat(date.month + 1, "-").concat(day);
       var monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       var stampStatus = false;
 
-      if (stampMap.has(stampName)) {
-        stampStatus = !stampMap.get(stampName);
-        stampMap.set(stampName, stampStatus);
+      if (stampMap.has(stampDate)) {
+        stampStatus = !stampMap.get(stampDate);
+        stampMap.set(stampDate, stampStatus);
 
         if (stampStatus) {
           pressStamp(elem2, stampType);
@@ -383,11 +376,11 @@ if (pathName.match(/objectives\/new/)) {} else if (pathName.match(/edit/) || que
         }
       } else {
         stampStatus = !stampStatus;
-        stampMap.set(stampName, stampStatus);
+        stampMap.set(stampDate, stampStatus);
         pressStamp(elem2, stampType);
       }
 
-      postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampName), {
+      postData("/objectives/".concat(objId, "/months/").concat(monthName, "/stamps/").concat(stampDate), {
         stampStatus: stampStatus
       }).then(function (data) {
         var w_num = data["aggregate"]["thisWeekAchvNum"];

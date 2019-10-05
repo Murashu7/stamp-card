@@ -13,10 +13,10 @@ const colorLog = require('../utils/color-log');
 const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
 const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
 
-router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationEnsurer, (req, res, next) => {
+router.post('/:objectiveId/months/:monthName/stamps/:stampDate', authenticationEnsurer, (req, res, next) => {
   const objectiveId = req.params.objectiveId;
   const monthName = req.params.monthName;
-  const stampName = req.params.stampName;
+  const stampDate = req.params.stampDate;
   const stampStatus = req.body.stampStatus;
 
   Month.findOne({
@@ -25,7 +25,7 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampName', authenticationE
    return  Stamp.findOrCreate({
       where: {
         monthId: month.monthId,
-        stampName: stampName
+        stampDate: stampDate
       },
       defaults: {
         stampStatus: stampStatus,

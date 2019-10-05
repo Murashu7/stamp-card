@@ -11,6 +11,8 @@ const colorLog = {
   white:'\u001b[37m',
   reset:'\u001b[0m',
   color: function(color, value) {
+    // TODO: 
+    // const c = Function('"use strict";return (this.' + color + ')')();
     const c = eval('this.' + color);
     console.log(`${c}${value}${this.reset}`);
   }

@@ -40,6 +40,8 @@ router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, n
     });
   } else {
     const objectiveId = uuid.v4();
+    // TODO: TEST 用の日付
+    // const today = moment('2019-09-29').tz('Asia/Tokyo').startOf('date');
     const today = moment().tz('Asia/Tokyo').startOf('date');
 
     Objective.create({
@@ -102,12 +104,12 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
     storedMonth = month || created;
     return Stamp.findAll({
       where: { monthId: storedMonth.monthId },
-      order: [['"stampName"', 'ASC']]
+      order: [['"stampDate"', 'ASC']]
     });
   }).then((stamps) => {
     const stampsData = stamps.map((s) => {
       const tmpObj = {};
-      tmpObj['stampName'] = s.stampName;
+      tmpObj['stampDate'] = s.stampDate;
       tmpObj['stampStatus'] = s.stampStatus;
       return tmpObj;
     });

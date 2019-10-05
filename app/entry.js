@@ -62,13 +62,14 @@ if (pathName.match(/objectives\/new/)) {
     if (tmp) {
       tmp.forEach((t) => {
         let json = JSON.parse(t);
-        stampMap.set(json.stampName, json.stampStatus);
+        stampMap.set(json.stampDate, json.stampStatus);
       });
     }
     return stampMap;
   }
 
   let stampMap = setupStampMap(stampStrs);
+  console.log(stampMap);
 
   const displayCal = function(calDate) {
     const firstDay = calDate.startOf('month'); // その月の初日
@@ -166,7 +167,7 @@ if (pathName.match(/objectives\/new/)) {
           td.setAttribute('data-day', days);
           const day = td.dataset.day;
           const tdDate = calDate.set('date', day).tz('Asia/Tokyo').format('YYYY-MM-DD');
-          const stampName = day;
+          const stampDate = day.match(/^\d*$/) ? Number(day) : null;
 
           if (todayStr === tdDate) { // 今日の td に色付け
              td.style.backgroundColor = 'skyblue'; 
@@ -183,8 +184,8 @@ if (pathName.match(/objectives\/new/)) {
              }
           } 
 
-          if (stampMap.has(stampName)) {
-            if (stampMap.get(stampName)) {
+          if (stampMap.has(stampDate)) {
+            if (stampMap.get(stampDate)) {
               pressStamp(tdBody, stampType);
             } else {
               removeStamp(tdBody);
@@ -212,14 +213,6 @@ if (pathName.match(/objectives\/new/)) {
     }
   }
   
-  // TODO: stamp の属性見直し(status, type, color 不要)
-  const initStampMap = function(stampStatus, objId) {
-    let stampMap = new Map();
-    stampMap.set("stampStatus", stampStatus);
-    stampMap.set("objectiveId", objId);
-    return stampMap;
-  }
-
   const pressStamp = function(elem, type) {
     if (stampTypeObj.map.has(type)) {
       elem.innerHTML = stampTypeObj.map.get(type);
@@ -233,14 +226,14 @@ if (pathName.match(/objectives\/new/)) {
   const addStampEventListener = function(elem1, elem2, date, stampMap, objId) {
     elem1.addEventListener('click', function(e) {
       const day = elem1.dataset.day;
-      const stampName = day;
+      const stampDate = day.match(/^\d*$/) ? Number(day) : null;
       const tdDate = `${date.year()}-${date.month + 1}-${day}`;
       const monthName = date.tz('Asia/Tokyo').format('YYYY-MM');
       let stampStatus = false;
 
-      if (stampMap.has(stampName)) {
-        stampStatus = !stampMap.get(stampName);
-        stampMap.set(stampName, stampStatus);
+      if (stampMap.has(stampDate)) {
+        stampStatus = !stampMap.get(stampDate);
+        stampMap.set(stampDate, stampStatus);
         if (stampStatus) {
           pressStamp(elem2, stampType);
         } else {
@@ -248,10 +241,10 @@ if (pathName.match(/objectives\/new/)) {
         }
       } else {
         stampStatus = !stampStatus;
-        stampMap.set(stampName, stampStatus);
+        stampMap.set(stampDate, stampStatus);
         pressStamp(elem2, stampType);
       }
-      postData(`/objectives/${objId}/months/${monthName}/stamps/${stampName}`, { stampStatus: stampStatus })
+      postData(`/objectives/${objId}/months/${monthName}/stamps/${stampDate}`, { stampStatus: stampStatus })
         .then((data) => {
           const w_num = data["aggregate"]["thisWeekAchvNum"];
           const w_rate = data["aggregate"]["thisWeekAchvRate"];

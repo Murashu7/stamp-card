@@ -4,8 +4,9 @@ const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 const loader = require('../models/sequelize-loader');
 const sequelize = loader.database;
+const Sequelize = loader.Sequelize;
+const Op = loader.Sequelize.Op;
 const moment = require('moment-timezone');
-
 const WeekRange = require('./moment-week-range');
 const colorLog = require('../utils/color-log');
 
@@ -18,10 +19,6 @@ const totalAggregateStamps = function(objective, today) {
   const elapsedDays = weekRange.elapsedDays(); // 開始日から今日までの経過日数
   const remainingDays = weekRange.remainingDays(); // 今日から終了日までの残日数
   const goalTimes = (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
-
-  // const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
-  // const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
-  // const stampNames = createStampNames(monthNames, currentDates);
 
   return Stamp.findOne({
     where: { 
@@ -53,11 +50,8 @@ const thisWeekAggregateStamps = function(objective, today) {
   const weekRange = new WeekRange(createdAt, today, dueDay);
   const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
   const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
-  const stampNames = createStampNames(monthNames, currentDates);
+  const stampDateMap = createStampDateMap(monthNames, currentDates);
   const goalTimes =  Math.ceil((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
-  console.log({currentDates});
-  console.log({monthNames});
-  console.log({stampNames});
 
   return Month.findAll({
     where: {
@@ -70,21 +64,19 @@ const thisWeekAggregateStamps = function(objective, today) {
       return m.monthId;
     });
   }).then((monthIds) => {
-    
-    // TODO: この検索だと、9月は29, 30日で10月は1, 2, 3, 4, 5, ...日で抽出したいが、10月に29日も含まれてしまう
+    const attrsStr = createAttrsStr(monthIds, monthNames, stampDateMap);
+
     return Stamp.findOne({
       where: { 
-        objectiveId: objectiveId,
-        monthId: monthIds,
-        stampName: stampNames,
         stampStatus: true
       },
-      attributes: [
-        [sequelize.fn('count', sequelize.col('stampStatus')), 'countStatus']
-      ]
+      attributes: 
+        // TODO:
+        // Function('"use strict";return (' + attrsStr + ')')()
+        eval(attrsStr)
     }).then((result) => {
       return new Promise((resolve) => {
-        const thisWeekAchvNum = result.dataValues['countStatus'];
+        const thisWeekAchvNum = Object.values(result.dataValues).reduce((total, value) => Number(total) + Number(value));
         objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
         objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
         resolve(objective);
@@ -98,20 +90,20 @@ function createStampNames(monthNames, dates) {
   dates.forEach((c) => { 
     monthNames.forEach((monthName) => {
       if (monthName === createMonthNameFromDate(c)) {
-        results.push(createStampNameFromDate(c));
+        results.push(createStampDate(c));
       }
     });
   });
   return results;
 }
 
-function createStampNameMap(monthNames, dates) {
+function createStampDateMap(monthNames, dates) {
   const map = new Map();
   monthNames.forEach((monthName) => { 
     let array = [];
     dates.forEach((date) => {
       if (monthName === createMonthNameFromDate(date)) {
-        array.push(createStampNameFromDate(date));
+        array.push(createStampDate(date));
         map.set(monthName, array);
       }
     });
@@ -130,17 +122,32 @@ function createMonthNames(date1, date2) {
   return monthNames;
 }
 
-// stampName を作成
-function createStampNameFromDate(date) {
-  const stampName = date.tz('Asia/Tokyo').format('DD'); 
-  if (stampName[0] === '0') {
-    return stampName.slice(1);
+// stampDate を作成
+function createStampDate(date) {
+  const stampDate = date.tz('Asia/Tokyo').format('DD'); 
+  if (stampDate[0] === '0') {
+    return stampDate.slice(1);
   }
-  return stampName;
+  return stampDate;
 }
 
 function createMonthNameFromDate(date) {
   return date.tz('Asia/Tokyo').format('YYYY-MM');
+}
+
+function createAttrsStr(monthIds, monthNames, stampDateMap) {
+  console.log({ monthIds });
+  console.log({ monthNames });
+  console.log({ stampDateMap });
+  let attrsStr = '[';
+  monthIds.forEach((monthId, index) => {
+    attrsStr +=  `[sequelize.fn('count', {[Op.or]: [{[Op.and]: [{"monthId": ${monthId}}, {"stampDate": {[Op.in]:[${stampDateMap.get(monthNames[index])}]}}]}, Sequelize.literal('NULL')]}), '${index}_count']`;
+     if ((monthIds.length != (index + 1))) {
+       attrsStr += ','
+     }
+  });
+  attrsStr += ']';
+  return attrsStr;
 }
 
 module.exports = {
@@ -148,5 +155,5 @@ module.exports = {
   thisWeekAggregateStamps: thisWeekAggregateStamps,
   createStampNames: createStampNames,
   createMonthNames: createMonthNames,
-  createStampNameMap: createStampNameMap
+  createStampDateMap: createStampDateMap
 }

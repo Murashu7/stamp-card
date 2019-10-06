@@ -9,8 +9,7 @@ const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 
 const stampTypeObj = require('./stamp-type');
-const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
-const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
+const AggregateStamps = require('./aggregate-stamps');
 const colorLog = require('../utils/color-log.js');
 
 /* GET home page. */
@@ -29,9 +28,10 @@ router.get('/', function(req, res, next) {
     }).then((objectives) => {
 
       const promises = objectives.map((objective) => {
+        const aggregateStamps = new AggregateStamps(objective, today);
         objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
         // 集計操作
-        return totalAggregateStamps(objective, today);
+        return aggregateStamps.total();
       });
       return Promise.all(promises);
 

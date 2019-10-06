@@ -12,14 +12,8 @@ const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 
-const totalAggregateStamps = require('../routes/aggregate-stamps.js').totalAggregateStamps;
-const thisWeekAggregateStamps = require('../routes/aggregate-stamps.js').thisWeekAggregateStamps;
-const createMonthNames = require('../routes/aggregate-stamps.js').createMonthNames;
-const createStampNames = require('../routes/aggregate-stamps.js').createStampNames;
-const createStampDateMap = require('../routes/aggregate-stamps.js').createStampDateMap;
-
+const AggregateStamps = require('../routes/aggregate-stamps.js');
 const WeekRange = require('../routes/moment-week-range');
-
 const colorLog = require('../utils/color-log');
 
 describe('/login', () => {
@@ -66,7 +60,6 @@ describe('/login', () => {
   });
 
 });
-
 
 describe('/objectives', () => {
   before(() => {
@@ -363,9 +356,9 @@ describe('aggregate-stamps', () => {
               const wr = new WeekRange(today, today, dueDay);
               const elapsedDays = wr.elapsedDays();
               const totalGoalTimes = (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
-              const monthNames = createMonthNames(wr.start, wr.end); // ふた月にまたぐ場合あり
+              const monthNames = AggregateStamps.createMonthNames(wr.start, wr.end); // ふた月にまたぐ場合あり
               const start2endDates = WeekRange.arrayDatesRange(wr.start, wr.end); // 開始日から終了日までの日付の配列
-              const stampDateMap = createStampDateMap(monthNames, start2endDates);
+              const stampDateMap = AggregateStamps.createStampDateMap(monthNames, start2endDates);
               const totalStampNum = start2endDates.length;
               
               // スタンプ作成
@@ -400,7 +393,8 @@ describe('aggregate-stamps', () => {
               }).then((objective) => {
                 // 集計テスト
                 // 全てのスタンプ集計
-                return totalAggregateStamps(objective, today)
+                const aggregateStamps = new AggregateStamps(objective, today);
+                return aggregateStamps.total()
               }).then((objective) => {
                 assert.equal(objective.totalAchvNum, totalStampNum);
                 assert.equal(objective.totalAchvRate, Math.round((totalStampNum / totalGoalTimes) * 100));
@@ -433,11 +427,10 @@ describe('aggregate-stamps', () => {
               
               // スタンプ集計用データ
               const wr = new WeekRange(today, today, dueDay);
-              const monthNames = createMonthNames(wr.start, wr.end);
+              const monthNames = AggregateStamps.createMonthNames(wr.start, wr.end);
               const start2endDates = WeekRange.arrayDatesRange(wr.start, wr.end); // 開始日から終了日までの日付の配列
-              const stampDateMap = createStampDateMap(monthNames, start2endDates);
+              const stampDateMap = AggregateStamps.createStampDateMap(monthNames, start2endDates);
               const currentDates = WeekRange.arrayDatesRange(wr.currentRange[0], wr.currentRange[1]); // 今週の配列(今週が 7 日以下の場合もある)
-
               const currentGoalTimes =  Math.round((currentDates.length / 7) * frequency);           
               const currentStampNum = currentDates.length;
               
@@ -472,7 +465,8 @@ describe('aggregate-stamps', () => {
               }).then((objective) => {
                 // 集計テスト
                 // 今週のスタンプ集計
-                return thisWeekAggregateStamps(objective, today);
+                const aggregateStamps = new AggregateStamps(objective, today);
+                return aggregateStamps.thisWeek();
               }).then((objective) => {
                 assert.equal(objective.thisWeekAchvNum, currentStampNum);
                 assert.equal(objective.thisWeekAchvRate, Math.round((currentStampNum / currentGoalTimes) * 100));

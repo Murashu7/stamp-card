@@ -10,150 +10,171 @@ const moment = require('moment-timezone');
 const WeekRange = require('./moment-week-range');
 const colorLog = require('../utils/color-log');
 
-// 総達成回数を集計する
-const totalAggregateStamps = function(objective, today) {
-  const frequency = objective.frequency; // 目標回数
-  const createdAt = moment(objective.createdAt); // 開始日
-  const dueDay = moment(objective.dueDay); // 終了日
-  const weekRange = new WeekRange(createdAt, today, dueDay);
-  const elapsedDays = weekRange.elapsedDays(); // 開始日から今日までの経過日数
-  const remainingDays = weekRange.remainingDays(); // 今日から終了日までの残日数
-  const goalTimes = (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
+class AggregateStamps {
 
-  return Stamp.findOne({
-    where: { 
-      objectiveId: objective.objectiveId,
-      stampStatus: true
-    },
-    attributes: [
-      [sequelize.fn('count', sequelize.col('stampStatus')), 'countStatus']
-    ]
-  }).then((result) => {
-    return new Promise((resolve) => {
-       const totalAchvNum = result.dataValues['countStatus'];
-       objective.totalAchvNum = totalAchvNum; // 今日までの達成数
-       objective.totalAchvRate = Math.round((totalAchvNum / goalTimes) * 100); // 今日まで達成率(%)
-       objective.elapsedDays = elapsedDays; // 今日までの経過日数
-       objective.remainingDays = remainingDays; // 期限日までの残日数
-       resolve(objective);
-    });
-  })
-}
+  constructor(objective, today) {
+    this._objective = objective;
+    this._frequency = objective.frequency; // 目標回数
+    this._createdAt = moment(objective.createdAt); // 開始日
+    this._dueDay = moment(objective.dueDay); // 終了日
+    this._weekRange = new WeekRange(this.createdAt, today, this.dueDay);
+    this._elapsedDays = this.weekRange.elapsedDays(); // 開始日から今日までの経過日数
+    this._remainingDays = this.weekRange.remainingDays(); // 今日から終了日までの残日数
+  }
 
-// 今週の達成回数を集計する
-const thisWeekAggregateStamps = function(objective, today) {
-  const objectiveId = objective.objectiveId;
-  const frequency = objective.frequency; // 目標回数
-  const createdAt = moment(objective.createdAt).tz('Asia/Tokyo'); // 開始日
-  const dueDay = moment(objective.dueDay).tz('Asia/Tokyo'); // 終了日
+  get objective() {
+    return this._objective;
+  }
+ 
+  get frequency() {
+    return this._frequency;
+  }
 
-  const weekRange = new WeekRange(createdAt, today, dueDay);
-  const monthNames = createMonthNames(weekRange.currentRange[0], weekRange.currentRange[1]);
-  const currentDates = WeekRange.arrayDatesRange(weekRange.currentRange[0], weekRange.currentRange[1]);
-  const stampDateMap = createStampDateMap(monthNames, currentDates);
-  const goalTimes =  Math.ceil((currentDates.length / 7) * frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
+  get createdAt() {
+    return this._createdAt;
+  }
 
-  return Month.findAll({
-    where: {
-      objectiveId: objectiveId,
-      monthName: monthNames
-    },
-    order: [['"monthName"', 'ASC']]
-  }).then((months) => {
-    return months.map((m) => {
-      return m.monthId;
-    });
-  }).then((monthIds) => {
-    const attrsStr = createAttrsStr(monthIds, monthNames, stampDateMap);
+  get dueDay() {
+    return this._dueDay;
+  }
+
+  get weekRange() {
+    return this._weekRange;
+  }
+
+  get elapsedDays() {
+    return this._elapsedDays;
+  }
+
+  get remainingDays() {
+    return this._remainingDays;
+  }
+
+  // 総達成回数を集計する
+  total() {
+    const goalTimes = (this.frequency * Math.ceil(this.elapsedDays / 7)); // 開始日から今日までの目標回数
 
     return Stamp.findOne({
       where: { 
+        objectiveId: this.objective.objectiveId,
         stampStatus: true
       },
-      attributes: 
-        // TODO:
-        // Function('"use strict";return (' + attrsStr + ')')()
-        eval(attrsStr)
+      attributes: [
+        [sequelize.fn('count', sequelize.col('stampStatus')), 'countStatus']
+      ]
     }).then((result) => {
       return new Promise((resolve) => {
-        const thisWeekAchvNum = Object.values(result.dataValues).reduce((total, value) => Number(total) + Number(value));
-        objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
-        objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
-        resolve(objective);
+         const totalAchvNum = result.dataValues['countStatus'];
+         this.objective.totalAchvNum = totalAchvNum; // 今日までの達成数
+         this.objective.totalAchvRate = Math.round((totalAchvNum / goalTimes) * 100); // 今日まで達成率(%)
+         this.objective.elapsedDays = this.elapsedDays; // 今日までの経過日数
+         this.objective.remainingDays = this.remainingDays; // 期限日までの残日数
+         resolve(this.objective);
       });
     })
-  });
-}
-
-function createStampNames(monthNames, dates) {
-  const results = [];
-  dates.forEach((c) => { 
-    monthNames.forEach((monthName) => {
-      if (monthName === createMonthNameFromDate(c)) {
-        results.push(createStampDate(c));
-      }
-    });
-  });
-  return results;
-}
-
-function createStampDateMap(monthNames, dates) {
-  const map = new Map();
-  monthNames.forEach((monthName) => { 
-    let array = [];
-    dates.forEach((date) => {
-      if (monthName === createMonthNameFromDate(date)) {
-        array.push(createStampDate(date));
-        map.set(monthName, array);
-      }
-    });
-  });
-  return map;
-}
-
-function createMonthNames(date1, date2) {
-  const startMonthName = createMonthNameFromDate(date1);
-  const endMonthName = createMonthNameFromDate(date2);
-  const monthNames = [];
-  monthNames.push(startMonthName);
-  if (startMonthName !== endMonthName) {
-    monthNames.push(endMonthName);
   }
-  return monthNames;
-}
 
-// stampDate を作成
-function createStampDate(date) {
-  const stampDate = date.tz('Asia/Tokyo').format('DD'); 
-  if (stampDate[0] === '0') {
-    return stampDate.slice(1);
+  // 今週の達成回数を集計する
+  thisWeek() {
+    const monthNames = AggregateStamps.createMonthNames(this.weekRange.currentRange[0], this.weekRange.currentRange[1]);
+    const currentDates = WeekRange.arrayDatesRange(this.weekRange.currentRange[0], this.weekRange.currentRange[1]);
+    const stampDateMap = AggregateStamps.createStampDateMap(monthNames, currentDates);
+    const goalTimes =  Math.ceil((currentDates.length / 7) * this.frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
+
+    return Month.findAll({
+      where: {
+        objectiveId: this.objective.objectiveId,
+        monthName: monthNames
+      },
+      order: [['"monthName"', 'ASC']]
+    }).then((months) => {
+      return months.map((m) => {
+        return m.monthId;
+      });
+    }).then((monthIds) => {
+      const attrsStr = this.createAttrsStr(monthIds, monthNames, stampDateMap);
+
+      return Stamp.findOne({
+        where: { 
+          stampStatus: true
+        },
+        attributes: 
+          // TODO:
+          // Function('"use strict";return (' + attrsStr + ')')()
+          eval(attrsStr)
+      }).then((result) => {
+        return new Promise((resolve) => {
+          const thisWeekAchvNum = Object.values(result.dataValues).reduce((total, value) => Number(total) + Number(value));
+          this.objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
+          this.objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
+          resolve(this.objective);
+        });
+      })
+    });
   }
-  return stampDate;
+
+  static createStampNames(monthNames, dates) {
+    const results = [];
+    dates.forEach((c) => { 
+      monthNames.forEach((monthName) => {
+        if (monthName === this.createMonthNameFromDate(c)) {
+          results.push(this.createStampDate(c));
+        }
+      });
+    });
+    return results;
+  }
+
+  static createStampDateMap(monthNames, dates) {
+    const map = new Map();
+    monthNames.forEach((monthName) => { 
+      let array = [];
+      dates.forEach((date) => {
+        if (monthName === this.createMonthNameFromDate(date)) {
+          array.push(this.createStampDate(date));
+          map.set(monthName, array);
+        }
+      });
+    });
+    return map;
+  }
+
+  // TODO: static
+  static createMonthNames(date1, date2) {
+    const startMonthName = this.createMonthNameFromDate(date1);
+    const endMonthName = this.createMonthNameFromDate(date2);
+    const monthNames = [];
+    monthNames.push(startMonthName);
+    if (startMonthName !== endMonthName) {
+      monthNames.push(endMonthName);
+    }
+    return monthNames;
+  }
+
+  // TODO: static
+  static createStampDate(date) {
+    const stampDate = date.tz('Asia/Tokyo').format('DD'); 
+    if (stampDate[0] === '0') {
+      return stampDate.slice(1);
+    }
+    return stampDate;
+  }
+
+  static createMonthNameFromDate(date) {
+    return date.tz('Asia/Tokyo').format('YYYY-MM');
+  }
+
+  createAttrsStr(monthIds, monthNames, stampDateMap) {
+    let attrsStr = '[';
+    monthIds.forEach((monthId, index) => {
+      attrsStr +=  `[sequelize.fn('count', {[Op.or]: [{[Op.and]: [{"monthId": ${monthId}}, {"stampDate": {[Op.in]:[${stampDateMap.get(monthNames[index])}]}}]}, Sequelize.literal('NULL')]}), '${index}_count']`;
+       if ((monthIds.length != (index + 1))) {
+         attrsStr += ','
+       }
+    });
+    attrsStr += ']';
+    return attrsStr;
+  }
 }
 
-function createMonthNameFromDate(date) {
-  return date.tz('Asia/Tokyo').format('YYYY-MM');
-}
-
-function createAttrsStr(monthIds, monthNames, stampDateMap) {
-  console.log({ monthIds });
-  console.log({ monthNames });
-  console.log({ stampDateMap });
-  let attrsStr = '[';
-  monthIds.forEach((monthId, index) => {
-    attrsStr +=  `[sequelize.fn('count', {[Op.or]: [{[Op.and]: [{"monthId": ${monthId}}, {"stampDate": {[Op.in]:[${stampDateMap.get(monthNames[index])}]}}]}, Sequelize.literal('NULL')]}), '${index}_count']`;
-     if ((monthIds.length != (index + 1))) {
-       attrsStr += ','
-     }
-  });
-  attrsStr += ']';
-  return attrsStr;
-}
-
-module.exports = {
-  totalAggregateStamps: totalAggregateStamps,
-  thisWeekAggregateStamps: thisWeekAggregateStamps,
-  createStampNames: createStampNames,
-  createMonthNames: createMonthNames,
-  createStampDateMap: createStampDateMap
-}
+module.exports = AggregateStamps;

@@ -13,9 +13,9 @@ class WeekRange {
       throw new Error('Parameter date order is incorrect.');
     }
 
-    this._currentDate = currentDate;
-    this._startDate = startDate;
-    this._endDate = endDate;
+    this._currentDate = currentDate.tz('Asia/Tokyo').startOf('date');
+    this._startDate = startDate.tz('Asia/Tokyo').startOf('date');
+    this._endDate = endDate.tz('Asia/Tokyo').startOf('date');
 
     this.setupRange = () => {
       this._startRange = this._createStartRange(this.start);

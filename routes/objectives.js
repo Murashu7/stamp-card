@@ -16,8 +16,7 @@ const authenticationEnsurer = require('./authentication-ensurer');
 
 const moment = require('moment-timezone');
 const stampTypeObj = require('./stamp-type');
-const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
-const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
+const AggregateStamps = require('./aggregate-stamps');
 const colorLog = require('../utils/color-log');
 
 router.get('/new', authenticationEnsurer, csrfProtection, (req, res, next) => {
@@ -84,10 +83,11 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
       storedObjective = objective;
       objective.formattedDueDay = moment(objective.dueDay).tz('Asia/Tokyo').format('YYYY/MM/DD');
       objective.formattedCreatedAt = moment(objective.createdAt).tz('Asia/Tokyo').format('YYYY/MM/DD');
+      const aggregateStamps = new AggregateStamps(objective, moment().tz('Asia/Tokyo').startOf('date'));
       
       // 集計処理
-      return totalAggregateStamps(objective, moment().tz('Asia/Tokyo').startOf('date')).then((objective) => {
-        return thisWeekAggregateStamps(objective,  moment().tz('Asia/Tokyo').startOf('date'));
+      return aggregateStamps.total().then((objective) => {
+        return aggregateStamps.thisWeek();
       }).then((objective) => {
         return Month.findOrCreate({
           where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },

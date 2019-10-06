@@ -10,8 +10,7 @@ const Stamp = require('../models/stamp');
 const Month = require('../models/month');
 
 const colorLog = require('../utils/color-log');
-const totalAggregateStamps = require('./aggregate-stamps').totalAggregateStamps;
-const thisWeekAggregateStamps = require('./aggregate-stamps').thisWeekAggregateStamps;
+const AggregateStamps = require('./aggregate-stamps');
 
 router.post('/:objectiveId/months/:monthName/stamps/:stampDate', authenticationEnsurer, (req, res, next) => {
   const objectiveId = req.params.objectiveId;
@@ -44,8 +43,9 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampDate', authenticationE
       where: { objectiveId: objectiveId }
     }).then((objective) => {
       const today = moment().tz('Asia/Tokyo').startOf('date');
-      return totalAggregateStamps(objective, today).then((objective) => {
-        return thisWeekAggregateStamps(objective, today);
+      const aggregateStamps = new AggregateStamps(objective, today);
+      return aggregateStamps.total().then((objective) => {
+        return aggregateStamps.thisWeek();
       });
     });
   }).then((objective) => {

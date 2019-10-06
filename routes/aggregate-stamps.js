@@ -52,7 +52,7 @@ class AggregateStamps {
 
   // 総達成回数を集計する
   total() {
-    const goalTimes = (this.frequency * Math.ceil(this.elapsedDays / 7)); // 開始日から今日までの目標回数
+    const goalTimes = AggregateStamps.calcTotalGoalTimes(this.elapsedDays, this.frequency); // 開始日から今日までの目標回数
 
     return Stamp.findOne({
       where: { 
@@ -79,7 +79,7 @@ class AggregateStamps {
     const monthNames = AggregateStamps.createMonthNames(this.weekRange.currentRange[0], this.weekRange.currentRange[1]);
     const currentDates = WeekRange.arrayDatesRange(this.weekRange.currentRange[0], this.weekRange.currentRange[1]);
     const stampDateMap = AggregateStamps.createStampDateMap(monthNames, currentDates);
-    const goalTimes =  Math.ceil((currentDates.length / 7) * this.frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
+    const goalTimes =  AggregateStamps.calcThisWeekGoalTimes(currentDates.length, this.frequency); // 今週の目標回数(今週が 7 日以下の場合もある)
 
     return Month.findAll({
       where: {
@@ -162,6 +162,14 @@ class AggregateStamps {
 
   static createMonthNameFromDate(date) {
     return date.tz('Asia/Tokyo').format('YYYY-MM');
+  }
+
+  static calcTotalGoalTimes(elapsedDays, frequency) {
+    return (frequency * Math.ceil(elapsedDays / 7)); // 開始日から今日までの目標回数
+  }
+
+  static calcThisWeekGoalTimes(datesLength, frequency) {
+    return Math.ceil((datesLength / 7) * frequency)
   }
 
   createAttrsStr(monthIds, monthNames, stampDateMap) {

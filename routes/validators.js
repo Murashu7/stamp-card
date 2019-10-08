@@ -1,6 +1,6 @@
 'use strict'
 
-const { check } = require("express-validator/check");
+const { check } = require("express-validator");
 const moment = require('moment-timezone');
 
 const validators = [

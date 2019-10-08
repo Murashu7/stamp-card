@@ -5,6 +5,9 @@ const router = express.Router();
 const authenticationEnsurer = require('./authentication-ensurer');
 const moment = require('moment');
 
+const loader = require('../models/sequelize-loader');
+const Op = loader.Op;
+
 const Objective = require('../models/objective');
 const Stamp = require('../models/stamp');
 const Month = require('../models/month');
@@ -22,10 +25,7 @@ router.post('/:objectiveId/months/:monthName/stamps/:stampDate', authenticationE
     where: { objectiveId: objectiveId, monthName: monthName }
   }).then((month) => {
    return  Stamp.findOrCreate({
-      where: {
-        monthId: month.monthId,
-        stampDate: stampDate
-      },
+      where: { monthId: month.monthId, stampDate: stampDate },
       defaults: {
         stampStatus: stampStatus,
         objectiveId: objectiveId

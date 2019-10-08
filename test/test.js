@@ -7,6 +7,9 @@ const moment = require('moment-timezone');
 const assert = require('assert');
 const deleteObjectiveAggregate = require('../routes/objectives').deleteObjectiveAggregate;
 
+const loader = require('../models/sequelize-loader');
+const Op = loader.Op;
+
 const User = require('../models/user');
 const Objective = require('../models/objective');
 const Month = require('../models/month');
@@ -147,13 +150,13 @@ describe('/objectives/:objectiveId/months/:monthName/stamps/:stampDate', () => {
               const objectiveId = createdObjectivePath.split('/objectives/')[1].split('/months/')[0];
               const monthName = moment().tz('Asia/Tokyo').format('YYYY-MM');
               Month.findOne({
-                where: { objectiveId: objectiveId, monthName: monthName }
+                where: { objectiveId: objectiveId , monthName: monthName }
               }).then((month) => {
                 const stampDate = 30;
                 request(app)
                   .post(`/objectives/${objectiveId}/months/${month.monthName}/stamps/${stampDate}`)
                   .send({ stampStatus: true })
-                  // 集計結果は別テストで検証(今日の日付 = テスト日によって集計結果が都度変わるため
+                  // 集計結果は別テストで検証(今日の日付 = テスト日によって集計結果が都度変わるため)
                   .expect(/\{"status":"OK","stampStatus":true,"aggregate":{"thisWeekAchvNum":/)
                   .end((err, res) => {
                     Stamp.findAll({
@@ -398,6 +401,7 @@ describe('aggregate-stamps', () => {
               }).then((objective) => {
                 assert.equal(objective.totalAchvNum, totalStampNum);
                 assert.equal(objective.totalAchvRate, Math.round((totalStampNum / totalGoalTimes) * 100));
+                assert.equal(objective.totalAchvRate, AggregateStamps.calcAchvRate(totalStampNum, totalGoalTimes));
                 if (err) return done(err);
                 deleteObjectiveAggregate(objectiveId, done, err);
               });
@@ -470,7 +474,7 @@ describe('aggregate-stamps', () => {
                 return aggregateStamps.thisWeek();
               }).then((objective) => {
                 assert.equal(objective.thisWeekAchvNum, currentStampNum);
-                assert.equal(objective.thisWeekAchvRate, Math.round((currentStampNum / currentGoalTimes) * 100));
+                assert.equal(objective.thisWeekAchvRate, AggregateStamps.calcAchvRate(currentStampNum, currentGoalTimes));
                 if (err) return done(err);
                 deleteObjectiveAggregate(objectiveId, done, err);
               });

@@ -5,7 +5,7 @@ const Stamp = require('../models/stamp');
 const loader = require('../models/sequelize-loader');
 const sequelize = loader.database;
 const Sequelize = loader.Sequelize;
-const Op = loader.Sequelize.Op;
+const Op = loader.Op;
 const moment = require('moment-timezone');
 const WeekRange = require('./moment-week-range');
 const colorLog = require('../utils/color-log');
@@ -55,7 +55,7 @@ class AggregateStamps {
     const goalTimes = AggregateStamps.calcTotalGoalTimes(this.elapsedDays, this.frequency); // 開始日から今日までの目標回数
 
     return Stamp.findOne({
-      where: { 
+      where: {
         objectiveId: this.objective.objectiveId,
         stampStatus: true
       },
@@ -66,7 +66,7 @@ class AggregateStamps {
       return new Promise((resolve) => {
          const totalAchvNum = result.dataValues['countStatus'];
          this.objective.totalAchvNum = totalAchvNum; // 今日までの達成数
-         this.objective.totalAchvRate = Math.round((totalAchvNum / goalTimes) * 100); // 今日まで達成率(%)
+         this.objective.totalAchvRate = AggregateStamps.calcAchvRate(totalAchvNum, goalTimes); // 今日まで達成率(%)
          this.objective.elapsedDays = this.elapsedDays; // 今日までの経過日数
          this.objective.remainingDays = this.remainingDays; // 期限日までの残日数
          resolve(this.objective);
@@ -107,6 +107,7 @@ class AggregateStamps {
           const thisWeekAchvNum = Object.values(result.dataValues).reduce((total, value) => Number(total) + Number(value));
           this.objective.thisWeekAchvNum = thisWeekAchvNum; // 今週の達成数
           this.objective.thisWeekAchvRate = Math.round((thisWeekAchvNum / goalTimes) * 100); // 今週の達成率(%)
+          this.objective.thisWeekAchvRate = AggregateStamps.calcAchvRate(thisWeekAchvNum, goalTimes); // 今週の達成率(%)
           resolve(this.objective);
         });
       })
@@ -139,7 +140,6 @@ class AggregateStamps {
     return map;
   }
 
-  // TODO: static
   static createMonthNames(date1, date2) {
     const startMonthName = this.createMonthNameFromDate(date1);
     const endMonthName = this.createMonthNameFromDate(date2);
@@ -151,7 +151,6 @@ class AggregateStamps {
     return monthNames;
   }
 
-  // TODO: static
   static createStampDate(date) {
     const stampDate = date.tz('Asia/Tokyo').format('DD'); 
     if (stampDate[0] === '0') {
@@ -170,6 +169,10 @@ class AggregateStamps {
 
   static calcThisWeekGoalTimes(datesLength, frequency) {
     return Math.ceil((datesLength / 7) * frequency)
+  }
+
+  static calcAchvRate(achvNum, goalTimes) {
+    return Math.round((achvNum / goalTimes) * 100);
   }
 
   createAttrsStr(monthIds, monthNames, stampDateMap) {

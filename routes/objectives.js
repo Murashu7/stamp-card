@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router();
 const uuid = require('uuid');
-const { validationResult } = require("express-validator/check");
+const { validationResult } = require("express-validator");
 const validators = require('./validators');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
@@ -13,6 +13,8 @@ const Objective = require('../models/objective');
 const Month = require('../models/month');
 const Stamp = require('../models/stamp');
 const authenticationEnsurer = require('./authentication-ensurer');
+const loader = require('../models/sequelize-loader');
+const Op = loader.Op;
 
 const moment = require('moment-timezone');
 const stampTypeObj = require('./stamp-type');
@@ -90,7 +92,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
         return aggregateStamps.thisWeek();
       }).then((objective) => {
         return Month.findOrCreate({
-          where: { objectiveId: objective.objectiveId, monthName: req.params.monthName },
+          where: { objectiveId: objective.objectiveId,  monthName: req.params.monthName },
           order: [['"monthId"', 'ASC'], ['"monthName"', 'ASC']]
         });
       });

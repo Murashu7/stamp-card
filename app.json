@@ -1,0 +1,7 @@
+{
+  "name": "stamp-card",
+  "description": "スタンプカードくん",
+  "logo": "",
+  "keywords": ["node"],
+  "image": "heroku/nodejs"
+}

@@ -96,6 +96,7 @@ class AggregateStamps {
 
       return Stamp.findOne({
         where: { 
+          objectiveId: this.objective.objectiveId,
           stampStatus: true
         },
         attributes: 

@@ -7,35 +7,34 @@ const moment = require('moment');
 
 const loader = require('../models/sequelize-loader');
 const Op = loader.Op;
-
 const Objective = require('../models/objective');
 const Stamp = require('../models/stamp');
 const Month = require('../models/month');
+const AggregateStamps = require('./aggregate-stamps');
 
 const colorLog = require('../utils/color-log');
-const AggregateStamps = require('./aggregate-stamps');
 
 router.post('/:objectiveId/months/:monthName/stamps/:stampDate', authenticationEnsurer, (req, res, next) => {
   const objectiveId = req.params.objectiveId;
   const monthName = req.params.monthName;
-  const stampDate = req.params.stampDate;
+  const stampDate = Number(req.params.stampDate);
   const stampStatus = req.body.stampStatus;
 
   Month.findOne({
     where: { objectiveId: objectiveId, monthName: monthName }
   }).then((month) => {
-   return  Stamp.findOrCreate({
+    return  Stamp.findOrCreate({
       where: { monthId: month.monthId, stampDate: stampDate },
       defaults: {
         stampStatus: stampStatus,
         objectiveId: objectiveId
-      }
+     }
    });
   }).then(([stamp, created]) => {
     if (stamp) {
       return stamp.update({
         stampStatus: stampStatus,
-      });
+      })
     }
   }).then(() => {
     // stamp 集計操作

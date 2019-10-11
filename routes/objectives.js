@@ -21,10 +21,6 @@ const stampTypeObj = require('./stamp-type');
 const AggregateStamps = require('./aggregate-stamps');
 const colorLog = require('../utils/color-log');
 
-router.get('/new', authenticationEnsurer, csrfProtection, (req, res, next) => {
-  res.render('new', { user: req.user, stampTypeObj: stampTypeObj, csrfToken: req.csrfToken() });
-});
-
 router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -66,16 +62,19 @@ router.post('/', authenticationEnsurer, validators, csrfProtection, (req, res, n
   }
 });
 
+router.get('/new', authenticationEnsurer, csrfProtection, (req, res, next) => {
+  res.render('new', { user: req.user, stampTypeObj: stampTypeObj, csrfToken: req.csrfToken() });
+});
+
 router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, next) => {
   let storedObjective = null;
   let storedMonth = null;
 
   Objective.findOne({
-    include: [
-      {
-        model: User,
-        attributes: ['userId', 'username']
-      }],
+    include: [{
+      model: User,
+      attributes: ['userId', 'username']
+    }],
     where: {
       objectiveId: req.params.objectiveId
     },
@@ -105,7 +104,7 @@ router.get('/:objectiveId/months/:monthName', authenticationEnsurer, (req, res, 
   }).then(([month, created]) => {
     storedMonth = month || created;
     return Stamp.findAll({
-      where: { monthId: storedMonth.monthId },
+      where: { objectiveId: storedObjective.objectiveId,  monthId: storedMonth.monthId },
       order: [['"stampDate"', 'ASC']]
     });
   }).then((stamps) => {

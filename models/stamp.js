@@ -9,6 +9,14 @@ const Stamp = loader.database.define('stamps', {
     autoIncrement: true,
     allowNull: false
   },
+  objectiveId: {
+    type: Sequelize.UUID,
+    allowNull: false
+  },
+  monthId: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
   stampDate: {
     type: Sequelize.INTEGER,
     allowNull: false
@@ -17,18 +25,15 @@ const Stamp = loader.database.define('stamps', {
     type: Sequelize.BOOLEAN,
     allowNull: false,
     defaultValue: false
-   },
-  monthId: {
-    type: Sequelize.INTEGER,
-    allowNull: false
-  },
-  objectiveId: {
-    type: Sequelize.UUID,
-    allowNull: false
   }
 }, {
   freezeTableName: true,
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      fields: ['objectiveId']
+    }
+  ]
 });
 
 module.exports = Stamp;
